@@ -1,4 +1,3 @@
-
 #include <curses.h>
 #include <errno.h>
 #include <math.h>
@@ -6,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s", __LINE__, strerror(errnum));exit(errnum);}
 #define mLINES LINES
@@ -77,7 +77,7 @@ void *util_resizePointer(void *pointer, size_t new_size);
 struct arg *
 main_init(void) {
 	initscr();noecho();cbreak();clear();curs_set(0);
-	struct arg *opt=malloc(sizeof(opt));
+	struct arg *opt=malloc(sizeof(struct arg));
 	if (!opt) CRASH(ENOMEM);
 	opt->p=malloc(sizeof(player));
 	if (!opt->p) CRASH(ENOMEM);
@@ -121,6 +121,12 @@ main_loop(struct arg *args) {
 	switch (args->gameState) {
 		case world:	
 			args->gameState=world_loop(args);
+			break;
+		case inventory:
+			break;
+		case menu:
+			break;
+		default:
 			break;
 	
 	}
@@ -168,7 +174,6 @@ world_loop(struct arg *args) {
 
 int
 world_checkCollision(int wx, int wy, struct map *currentMap) {
-	if (!&currentMap->mapArr) {
 	int tile=currentMap->mapArr[wy * currentMap->cols + wx];
 		if (tile<2) return tile;
 		switch (tile) {
@@ -177,16 +182,17 @@ world_checkCollision(int wx, int wy, struct map *currentMap) {
 				break;
 		}
 		return 0;
-	}
-	CRASH(ENOMEM)
 }
 
 void 
 util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	FILE *fptr;
-	char *fullpath=malloc(sizeof(char)*(strlen(path)+strlen(currentMap->mapId)));
+	size_t fullpath_size=sizeof(char)*(strlen(path)+strlen(currentMap->mapId));
+	char *fullpath=malloc(fullpath_size);
 	if (!fullpath) CRASH(ENOMEM);
-	if (snprintf(fullpath, sizeof(fullpath), "%s%s", path, mapId)<0) {}
+	if (snprintf(fullpath, fullpath_size, "%s%s", path, mapId)<0) CRASH(ENOBUFS);
+	if (!(access(fullpath, R_OK))) CRASH(EACCES);
+	if (!(fptr=fopen(fullpath, "rb"))) CRASH(ENOMEM);
 
 }
 
@@ -201,8 +207,9 @@ util_resizePointer(void *pointer, size_t new_size) {
 
 int
 main(int argc, char **argv) {
+	printf("%c, %s", argc, argv[0]);
 	initscr();
-	struct arg *args=malloc(sizeof(args));
+	struct arg *args=malloc(sizeof(struct arg));
 	args=main_init();
 
 	refresh();
