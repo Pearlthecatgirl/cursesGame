@@ -25,7 +25,7 @@ struct map {
 struct player {
 	struct entity *self;
 	char saveId[MAX_FILE_NAME_SIZE];
-	char *Name[20];
+	char Name[20];
 
 	// Spawn/respawning
 	int resx,resy;
@@ -48,10 +48,13 @@ struct arg {
 
 	short isRunning;
 	short iSMenu;
+	unsigned long long tick;
+	char cKey;
 
 	enum State {world, menu, inventory} gameState;
 	
 	int cornerCoords[8];
+	int xOffset, yOffset;
 } args;
 
 // Functions
@@ -64,25 +67,37 @@ void *util_resizePointer(void *pointer, size_t new_size);
 struct arg *
 main_init(void) {
 	initscr();noecho();cbreak();clear();curs_set(0);
-	struct arg *args=malloc(sizeof(args));
-	if (!args) CRASH(ENOMEM);
-	args->p=malloc(sizeof(player));
-	if (!args->p) CRASH(ENOMEM);
-	args->self=malloc(sizeof(base));
-	if (!args->self) CRASH(ENOMEM);
-	args->currentMap=malloc(sizeof(map));
-	if (!args->currentMap) CRASH(ENOMEM);
-	args->isRunning=1;	
+	struct arg *opt=malloc(sizeof(opt));
+	if (!opt) CRASH(ENOMEM);
+	opt->p=malloc(sizeof(player));
+	if (!opt->p) CRASH(ENOMEM);
+	opt->p->self=malloc(sizeof(entity));
+	if (!opt->p->self) CRASH(ENOMEM);
+	opt->self=malloc(sizeof(base));
+	if (!opt->self) CRASH(ENOMEM);
+	opt->currentMap=malloc(sizeof(map));
+	if (!opt->currentMap) CRASH(ENOMEM);
+	opt->isRunning=1;	
 
-	args->window_array[0]=newwin(mLINES, mCOLS, 0, 0); // Root Window (always on)
-	args->window_array[1]=subwin(args->window_array[0], 0, 0, 0, 0); // main UI (always on)
-	args->window_array[2]=subwin(args->window_array[0], 0, 0, 0, 0); // World Display
-	args->window_array[3]=subwin(args->window_array[2], 0, 0, 0, 0); // World UI (world display)
-	args->gameState=world;
+	opt->window_array[0]=newwin(mLINES, mCOLS, 0, 0); // Root Window (always on)
+	opt->window_array[1]=subwin(opt->window_array[0], 0, 0, 0, 0); // main UI (always on)
+	opt->window_array[2]=subwin(opt->window_array[0], 0, 0, 0, 0); // World Display
+	opt->window_array[3]=subwin(opt->window_array[2], 0, 0, 0, 0); // World UI (world display)
+
+	opt->gameState=world;
 
 	// Move loading map to here
 
-	return args;
+	opt->tick=0;
+	return opt;
+}
+
+void
+main_loop(struct arg *args) {
+	args->tick+=1;
+	args->cKey=getch();
+	//box(args->window_array[1], 0, 0);
+	
 }
 
 void *
@@ -96,7 +111,9 @@ util_resizePointer(void *pointer, size_t new_size) {
 
 int
 main(int argc, char **argv) {
-	struct arg *args=main_init();
+	initscr();
+	struct arg *args=malloc(sizeof(args));
+	args=main_init();
 
 	refresh();
 	while (args->isRunning) {
