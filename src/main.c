@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 
-#define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s"), __LINE__, strerror(errnum);exit(errnum);}
+#define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s", __LINE__, strerror(errnum));exit(errnum);}
 #define mLINES LINES
 #define mCOLS COLS
 #define MALLOC_ERR 1
@@ -70,7 +70,7 @@ void main_loop(struct arg *args);
 enum State world_loop(struct arg *args);
 int world_checkCollision(int wx, int wy, struct map *currentMap);
 
-
+void util_loadMap(char *path, char *mapId, struct map *currentMap);
 void *util_resizePointer(void *pointer, size_t new_size);
 
 
@@ -168,14 +168,26 @@ world_loop(struct arg *args) {
 
 int
 world_checkCollision(int wx, int wy, struct map *currentMap) {
+	if (!&currentMap->mapArr) {
 	int tile=currentMap->mapArr[wy * currentMap->cols + wx];
-	if (tile<2) return tile;
-	switch (tile) {
-		default:
-			return 0;
-			break;
+		if (tile<2) return tile;
+		switch (tile) {
+			default:
+				return 0;
+				break;
+		}
+		return 0;
 	}
-	return 0;
+	CRASH(ENOMEM)
+}
+
+void 
+util_loadMap(char *path, char *mapId, struct map *currentMap) {
+	FILE *fptr;
+	char *fullpath=malloc(sizeof(char)*(strlen(path)+strlen(currentMap->mapId)));
+	if (!fullpath) CRASH(ENOMEM);
+	if (snprintf(fullpath, sizeof(fullpath), "%s%s", path, mapId)<0) {}
+
 }
 
 void *
