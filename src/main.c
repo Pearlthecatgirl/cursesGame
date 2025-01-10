@@ -1,8 +1,11 @@
+
+#include <curses.h>
+#include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <curses.h>
+#include <time.h>
 
 #define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s"), __LINE__, strerror(errnum);exit(errnum);}
 #define mLINES LINES
@@ -10,6 +13,7 @@
 #define MALLOC_ERR 1
 #define REALLOC_ERR 2
 #define MAX_FILE_NAME_SIZE 16 
+#define TARGETTICKRATE 20
 
 struct entity {
 	int ex, ey;
@@ -18,7 +22,7 @@ struct entity {
 struct map {
 	char *mapName;
 	char mapId[MAX_FILE_NAME_SIZE];
-	short mapArr;
+	short *mapArr;
 	int cols, lines;
 } map;
 
@@ -52,14 +56,20 @@ struct arg {
 	char cKey;
 
 	enum State {world, menu, inventory} gameState;
+
+	struct timespec *preFrame, *postFrame;
 	
 	int cornerCoords[8];
-	int xOffset, yOffset;
+	int wOffset, hOffset;
 } args;
 
 // Functions
 struct arg *main_init(void);
 void main_loop(struct arg *args);
+
+enum State world_loop(struct arg *args);
+int world_checkCollision(int wx, int wy, struct map *currentMap);
+
 
 void *util_resizePointer(void *pointer, size_t new_size);
 
@@ -77,6 +87,8 @@ main_init(void) {
 	if (!opt->self) CRASH(ENOMEM);
 	opt->currentMap=malloc(sizeof(map));
 	if (!opt->currentMap) CRASH(ENOMEM);
+	opt->preFrame=malloc(sizeof(struct timespec));
+	opt->postFrame=malloc(sizeof(struct timespec));
 	opt->isRunning=1;	
 
 	opt->window_array[0]=newwin(mLINES, mCOLS, 0, 0); // Root Window (always on)
@@ -86,6 +98,7 @@ main_init(void) {
 
 	opt->gameState=world;
 
+	timeout(( (int) (1/((double)TARGETTICKRATE))*1000));
 	// Move loading map to here
 
 	opt->tick=0;
@@ -95,9 +108,74 @@ main_init(void) {
 void
 main_loop(struct arg *args) {
 	args->tick+=1;
+	timespec_get(args->preFrame, TIME_UTC);
 	args->cKey=getch();
-	//box(args->window_array[1], 0, 0);
+	box(args->window_array[1], 0, 0);
+	wrefresh(args->window_array[1]);
+
+	// Check the box to see if the screen width changes at all
+	args->wOffset=args->hOffset=1;
+	if (mLINES%2) args->wOffset=2;
+	if (mCOLS%2) args->hOffset=2;
+
+	switch (args->gameState) {
+		case world:	
+			args->gameState=world_loop(args);
+			break;
 	
+	}
+	
+	timespec_get(args->postFrame, TIME_UTC);
+	
+	double tSetup = (args->postFrame->tv_sec - args->preFrame->tv_sec) + (args->postFrame->tv_nsec - args->preFrame->tv_nsec)/1000000000.0;
+	timeout((int)(((1/(double)TARGETTICKRATE)-tSetup)*1000));
+}
+
+enum State 
+world_loop(struct arg *args) {
+	switch (args->cKey) {
+		case'w':
+			if (!world_checkCollision(args->p->self->ex,args->p->self->ey-1,args->currentMap)) {
+				args->p->self->ey-=1;
+			}
+			break;
+		case's':
+			if (!world_checkCollision(args->p->self->ex,args->p->self->ey+1,args->currentMap)) {
+				args->p->self->ey+=1;
+			}
+			break;
+		case'a':
+			if (!world_checkCollision(args->p->self->ex-1, args->p->self->ey,args->currentMap)) {
+				args->p->self->ex-=1;
+			}
+			break;
+		case'd':
+			if (!world_checkCollision(args->p->self->ex+1, args->p->self->ey,args->currentMap)) {
+				args->p->self->ex+=1;
+			}
+			break;
+		case'e':
+				return inventory;	
+			break;
+		case'r':
+			args->p->self->ex=25;
+			args->p->self->ey=25;
+			break;
+		case'q':args->isRunning=0;
+	}
+	return world;
+}
+
+int
+world_checkCollision(int wx, int wy, struct map *currentMap) {
+	int tile=currentMap->mapArr[wy * currentMap->cols + wx];
+	if (tile<2) return tile;
+	switch (tile) {
+		default:
+			return 0;
+			break;
+	}
+	return 0;
 }
 
 void *
