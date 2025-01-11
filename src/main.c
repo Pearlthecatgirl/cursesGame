@@ -7,13 +7,12 @@
 #include <time.h>
 #include <unistd.h>
 
-#define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s", __LINE__, strerror(errnum));exit(errnum);}
-#define mLINES LINES
-#define mCOLS COLS
-#define MALLOC_ERR 1
-#define REALLOC_ERR 2
-#define MAX_FILE_NAME_SIZE 16 
-#define TARGETTICKRATE 20
+#define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();exit(errnum);}
+#define mLINES LINES //	Max Screen size
+#define mCOLS COLS // Max screen size
+#define MAX_FILE_NAME_SIZE 16 // File name size
+#define TARGET_TICK_RATE 20
+#define HEADER_SIZE 50 //Size of header in each read file
 
 struct entity {
 	int ex, ey;
@@ -59,7 +58,7 @@ struct arg {
 
 	struct timespec *preFrame, *postFrame;
 	
-	int cornerCoords[8];
+	int cornerCoords[2 * 2 * 2];
 	int wOffset, hOffset;
 } args;
 
@@ -67,12 +66,13 @@ struct arg {
 struct arg *main_init(void);
 void main_loop(struct arg *args);
 
-enum State world_loop(struct arg *args);
-int world_checkCollision(int wx, int wy, struct map *currentMap);
-
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
 void *util_resizePointer(void *pointer, size_t new_size);
 
+int world_checkCollision(int wx, int wy, struct map *currentMap);
+void world_defineCorners(int px, int py, int *output);
+void world_display(struct arg *args);
+enum State world_loop(struct arg *args);
 
 struct arg *
 main_init(void) {
@@ -85,11 +85,19 @@ main_init(void) {
 	if (!opt->p->self) CRASH(ENOMEM);
 	opt->self=malloc(sizeof(base));
 	if (!opt->self) CRASH(ENOMEM);
+	opt->self->dat=malloc(sizeof(data));
+	if (!opt->self->dat) CRASH(ENOMEM);
+	// set 5 tilesets for now... move into dat file later
+	opt->self->dat->tileset=malloc(sizeof(char)*6);
+	if (!opt->self->dat->tileset) CRASH(ENOMEM);
+	if (!strncpy(opt->self->dat->tileset, ".#,><", 6)) CRASH(ENOMEM);
+
 	opt->currentMap=malloc(sizeof(map));
 	if (!opt->currentMap) CRASH(ENOMEM);
 	opt->preFrame=malloc(sizeof(struct timespec));
 	opt->postFrame=malloc(sizeof(struct timespec));
 	opt->isRunning=1;	
+
 
 	opt->window_array[0]=newwin(mLINES, mCOLS, 0, 0); // Root Window (always on)
 	opt->window_array[1]=subwin(opt->window_array[0], 0, 0, 0, 0); // main UI (always on)
@@ -97,13 +105,16 @@ main_init(void) {
 	opt->window_array[3]=subwin(opt->window_array[2], 0, 0, 0, 0); // World UI (world display)
 
 	opt->gameState=world;
+	opt->p->self->ey=5;
+	opt->p->self->ex=5;
 
-	timeout(( (int) (1/((double)TARGETTICKRATE))*1000));
+	timeout(( (int) (1/((double)TARGET_TICK_RATE))*1000));
 	// Move loading map to here
 
 	opt->tick=0;
 	return opt;
 }
+
 
 void
 main_loop(struct arg *args) {
@@ -121,6 +132,10 @@ main_loop(struct arg *args) {
 	switch (args->gameState) {
 		case world:	
 			args->gameState=world_loop(args);
+			world_display(args);
+			fprintf(stderr, "test\n");
+
+
 			break;
 		case inventory:
 			break;
@@ -134,7 +149,71 @@ main_loop(struct arg *args) {
 	timespec_get(args->postFrame, TIME_UTC);
 	
 	double tSetup = (args->postFrame->tv_sec - args->preFrame->tv_sec) + (args->postFrame->tv_nsec - args->preFrame->tv_nsec)/1000000000.0;
-	timeout((int)(((1/(double)TARGETTICKRATE)-tSetup)*1000));
+	timeout((int)(((1/(double)TARGET_TICK_RATE)-tSetup)*1000));
+}
+
+int
+world_checkCollision(int wx, int wy, struct map *currentMap) {
+	int tile=currentMap->mapArr[wy * currentMap->cols + wx];
+		if (tile<2) return tile;
+		switch (tile) {
+			default:
+				return 0;
+				break;
+		}
+		return 0;
+}
+
+void
+world_defineCorners(int px, int py, int * output) {
+	/* (0,1)	(2,3)
+	 * (4,5)	(6,7)
+	 * */
+	if (mLINES%2) {
+		output[5]=py+(int)(mLINES/2)-1; // Y coord
+	} else { output[5]=py+(int)(mLINES/2)-2; } // Y coord
+	if (mCOLS%2) {
+	output[2]=px+(int)(mCOLS/2)-1;  // X coord
+	} else { output[2]=px+(int)(mCOLS/2)-2; } // X coord
+										  //
+	output[0]=px-(int)(mCOLS/2)+1;  // X coord
+	output[1]=py-(int)(mLINES/2)+1; // Y coord
+	output[3]=output[1];
+	output[4]=output[0];
+	output[6]=output[2];
+	output[7]=output[5];
+}
+
+void
+world_display(struct arg *args) {
+	int edgeX=args->p->self->ex, edgeY=args->p->self->ey;
+	int midX=(int)mLINES/2, midY=(int)mCOLS/2;
+
+	fprintf(stderr, "test\n");
+	// Calculate whether to scroll, or move the player on screen. 
+	if (args->p->self->ex-mCOLS/2+args->wOffset<=0) {
+		edgeX=mCOLS/2-args->wOffset+1;
+	} else if (args->p->self->ex+mCOLS/2-1>=args->currentMap->cols) edgeX=args->currentMap->cols-mCOLS/2;
+	if (args->p->self->ey-mLINES/2+args->hOffset<=0) {
+		edgeY=mLINES/2-args->hOffset+1;
+	} else if (args->p->self->ey+mLINES/2-1>=args->currentMap->lines) edgeY=args->currentMap->lines-mLINES/2;
+
+	// define edges to draw from
+	world_defineCorners(edgeX, edgeY, args->cornerCoords);
+
+	for (int iwx=args->cornerCoords[0], isx=1; /*iwx<args->cornerCoords[2],*/ isx < mCOLS-1;iwx++,isx++) {
+		for (int iwy=args->cornerCoords[1], isy=1; /*iwy<args->cornerCoords[5],*/ isy < mLINES-1;iwy++, isy++) {
+			mvwprintw(args->window_array[2], isy, isx, "%c", args->self->dat->tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
+
+			/* Query the screen coordinates for when the map coordinates match up with player's map coordinates*/
+			if (iwy==args->p->self->ey) midY=isy;
+			if (iwx==args->p->self->ex) midX=isx;
+		}
+	}
+	mvwprintw(args->window_array[2], midY, midX, "@");
+
+	wrefresh(args->window_array[2]);
+	wrefresh(args->window_array[1]);
 }
 
 enum State 
@@ -172,28 +251,39 @@ world_loop(struct arg *args) {
 	return world;
 }
 
-int
-world_checkCollision(int wx, int wy, struct map *currentMap) {
-	int tile=currentMap->mapArr[wy * currentMap->cols + wx];
-		if (tile<2) return tile;
-		switch (tile) {
-			default:
-				return 0;
-				break;
-		}
-		return 0;
-}
-
 void 
 util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	FILE *fptr;
-	size_t fullpath_size=sizeof(char)*(strlen(path)+strlen(currentMap->mapId));
-	char *fullpath=malloc(fullpath_size);
-	if (!fullpath) CRASH(ENOMEM);
-	if (snprintf(fullpath, fullpath_size, "%s%s", path, mapId)<0) CRASH(ENOBUFS);
-	if (!(access(fullpath, R_OK))) CRASH(EACCES);
+	char fullpath[256];
+	if (snprintf(fullpath, 256, "%s/%s", path, mapId)<0) CRASH(ENOBUFS);
+	if (!(access(fullpath, R_OK)==0)) CRASH(EACCES);
 	if (!(fptr=fopen(fullpath, "rb"))) CRASH(ENOMEM);
+	
+	// char *raw=malloc(sizeof(char)*(HEADER_SIZE+1));
+	// if (!raw) CRASH(ENOMEM);
+	// if (!fread(raw, sizeof(char)*(HEADER_SIZE+1), 1, fptr)) CRASH(0);
+	char *header=malloc(sizeof(char)*(HEADER_SIZE+1));
+	if (!header) CRASH(ENOMEM);
+	if (!fread(header, sizeof(char)*(HEADER_SIZE+1), 1, fptr)) CRASH(0);
 
+	// strncpy(header, raw, sizeof(char)*(HEADER_SIZE+1));
+
+	if (!strncpy(currentMap->mapId, mapId, sizeof(char)*MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
+	if (!strcmp(currentMap->mapId, strtok(header, "|"))==0) fprintf(stderr, "Warning: map id doesn't seem correct...");
+	fprintf(stdout, "test: %s\n", strtok(NULL, "|"));
+	//if (!strncpy(currentMap->mapName, strtok(NULL, "|"), strlen(currentMap->mapName))) CRASH(ENOBUFS);
+	fprintf(stdout, "test\n");
+	currentMap->lines=atoi(strtok(NULL, "|"));
+	currentMap->cols=atoi(strtok(NULL, "|"));
+	
+	if (!(currentMap->mapArr=malloc(sizeof(short)*currentMap->lines*currentMap->cols))) CRASH(ENOMEM);
+	if (!fread(currentMap->mapArr, sizeof(short), (size_t)currentMap->lines*currentMap->cols, fptr)) CRASH(0);
+
+	fclose(fptr);
+
+	//free(raw);
+	free(header);
+	return;
 }
 
 void *
@@ -207,10 +297,12 @@ util_resizePointer(void *pointer, size_t new_size) {
 
 int
 main(int argc, char **argv) {
-	printf("%c, %s", argc, argv[0]);
-	initscr();
+	fprintf(stdout, "args: %d, running: %s", argc, argv[0]);
 	struct arg *args=malloc(sizeof(struct arg));
 	args=main_init();
+
+	fprintf(stdout, "test\n");
+	util_loadMap("./data", "MAP000.TST", args->currentMap);
 
 	refresh();
 	while (args->isRunning) {
