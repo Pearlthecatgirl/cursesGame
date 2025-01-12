@@ -8,11 +8,14 @@
 #include <unistd.h>
 
 #define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();exit(errnum);}
-#define mLINES LINES //	Max Screen size
-#define mCOLS COLS // Max screen size
+#define mLINES 17 //	Max Screen size
+#define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
 #define TARGET_TICK_RATE 20
 #define HEADER_SIZE 50 //Size of header in each read file
+#define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
+
+char *tileset=".#,<>13456289";
 
 struct entity {
 	int ex, ey;
@@ -36,7 +39,7 @@ struct player {
 } player;
 
 struct data {
-	char *tileset;
+	char tileset[6];
 } data;
 
 struct base {
@@ -88,9 +91,10 @@ main_init(void) {
 	opt->self->dat=malloc(sizeof(data));
 	if (!opt->self->dat) CRASH(ENOMEM);
 	// set 5 tilesets for now... move into dat file later
-	opt->self->dat->tileset=malloc(sizeof(char)*6);
-	if (!opt->self->dat->tileset) CRASH(ENOMEM);
-	if (!strncpy(opt->self->dat->tileset, ".#,><", 6)) CRASH(ENOMEM);
+	//opt->self->dat->tileset=malloc(sizeof(char)*6);
+	//if (!opt->self->dat->tileset) CRASH(ENOMEM);
+	//if (!strncpy(opt->self->dat->tileset, ".-,><", 6)) CRASH(ENOMEM);
+	fprintf(stderr, "%c",opt->self->dat->tileset[2]);
 
 	opt->currentMap=malloc(sizeof(map));
 	if (!opt->currentMap) CRASH(ENOMEM);
@@ -133,7 +137,7 @@ main_loop(struct arg *args) {
 		case world:	
 			args->gameState=world_loop(args);
 			world_display(args);
-			fprintf(stderr, "test\n");
+			mvwprintw(args->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", args->p->self->ex, args->p->self->ey, args->tick);
 
 
 			break;
@@ -143,6 +147,7 @@ main_loop(struct arg *args) {
 			break;
 		default:
 			break;
+		wrefresh(args->window_array[2]);
 	
 	}
 	
@@ -189,7 +194,7 @@ world_display(struct arg *args) {
 	int edgeX=args->p->self->ex, edgeY=args->p->self->ey;
 	int midX=(int)mLINES/2, midY=(int)mCOLS/2;
 
-	fprintf(stderr, "test\n");
+	//fprintf(stderr, "test\n");
 	// Calculate whether to scroll, or move the player on screen. 
 	if (args->p->self->ex-mCOLS/2+args->wOffset<=0) {
 		edgeX=mCOLS/2-args->wOffset+1;
@@ -203,7 +208,8 @@ world_display(struct arg *args) {
 
 	for (int iwx=args->cornerCoords[0], isx=1; /*iwx<args->cornerCoords[2],*/ isx < mCOLS-1;iwx++,isx++) {
 		for (int iwy=args->cornerCoords[1], isy=1; /*iwy<args->cornerCoords[5],*/ isy < mLINES-1;iwy++, isy++) {
-			mvwprintw(args->window_array[2], isy, isx, "%c", args->self->dat->tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
+			//mvwprintw(args->window_array[2], isy, isx, "%c", args->self->dat->tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
+			mvwprintw(args->window_array[2], isy, isx, "%c", tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
 
 			/* Query the screen coordinates for when the map coordinates match up with player's map coordinates*/
 			if (iwy==args->p->self->ey) midY=isy;
@@ -268,14 +274,18 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 
 	// strncpy(header, raw, sizeof(char)*(HEADER_SIZE+1));
 
+	char tmp_nameBuffer[MAX_NAME_SIZE];
 	if (!strncpy(currentMap->mapId, mapId, sizeof(char)*MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
-	if (!strcmp(currentMap->mapId, strtok(header, "|"))==0) fprintf(stderr, "Warning: map id doesn't seem correct...");
-	fprintf(stdout, "test: %s\n", strtok(NULL, "|"));
-	//if (!strncpy(currentMap->mapName, strtok(NULL, "|"), strlen(currentMap->mapName))) CRASH(ENOBUFS);
-	fprintf(stdout, "test\n");
+	if (!strcmp(currentMap->mapId, strtok(header, "|"))==0) fprintf(stderr, "Warning: map id doesn't seem correct...\n");
+	if (!strncpy(tmp_nameBuffer, strtok(NULL, "|"), MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
 	currentMap->lines=atoi(strtok(NULL, "|"));
 	currentMap->cols=atoi(strtok(NULL, "|"));
+
+	currentMap->mapName=malloc(sizeof(char)*strlen(tmp_nameBuffer));
+	if (!currentMap->mapName) CRASH(ENOMEM);
+	if (!strncpy(currentMap->mapName, tmp_nameBuffer, sizeof(char)*strlen(tmp_nameBuffer))) CRASH(ENOMEM);
 	
+	// TODO: something is wrong here... not reading the array correctly. 
 	if (!(currentMap->mapArr=malloc(sizeof(short)*currentMap->lines*currentMap->cols))) CRASH(ENOMEM);
 	if (!fread(currentMap->mapArr, sizeof(short), (size_t)currentMap->lines*currentMap->cols, fptr)) CRASH(0);
 
@@ -301,7 +311,6 @@ main(int argc, char **argv) {
 	struct arg *args=malloc(sizeof(struct arg));
 	args=main_init();
 
-	fprintf(stdout, "test\n");
 	util_loadMap("./data", "MAP000.TST", args->currentMap);
 
 	refresh();
