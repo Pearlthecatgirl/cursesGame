@@ -15,7 +15,7 @@
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
 
-char *tileset=".#,<>13456289";
+//char *tileset=".#,<>";
 
 struct entity {
 	int ex, ey;
@@ -40,7 +40,7 @@ struct player {
 } player;
 
 struct data {
-	char tileset[6];
+	char *tileset;
 } data;
 
 struct base {
@@ -92,10 +92,9 @@ main_init(void) {
 	opt->self->dat=malloc(sizeof(data));
 	if (!opt->self->dat) CRASH(ENOMEM);
 	// set 5 tilesets for now... move into dat file later
-	//opt->self->dat->tileset=malloc(sizeof(char)*6);
-	//if (!opt->self->dat->tileset) CRASH(ENOMEM);
-	//if (!strncpy(opt->self->dat->tileset, ".-,><", 6)) CRASH(ENOMEM);
-	fprintf(stderr, "%c",opt->self->dat->tileset[2]);
+	opt->self->dat->tileset=malloc(sizeof(char)*6);
+	if (!opt->self->dat->tileset) CRASH(ENOMEM);
+	if (!strncpy(opt->self->dat->tileset, ".#,><", 6)) CRASH(ENOMEM);
 
 	opt->currentMap=malloc(sizeof(map));
 	if (!opt->currentMap) CRASH(ENOMEM);
@@ -119,7 +118,6 @@ main_init(void) {
 	opt->tick=0;
 	return opt;
 }
-
 
 void
 main_loop(struct arg *args) {
@@ -195,7 +193,6 @@ world_display(struct arg *args) {
 	int edgeX=args->p->self->ex, edgeY=args->p->self->ey;
 	int midX=(int)mLINES/2, midY=(int)mCOLS/2;
 
-	//fprintf(stderr, "test\n");
 	// Calculate whether to scroll, or move the player on screen. 
 	if (args->p->self->ex-mCOLS/2+args->wOffset<=0) {
 		edgeX=mCOLS/2-args->wOffset+1;
@@ -209,9 +206,7 @@ world_display(struct arg *args) {
 
 	for (int iwx=args->cornerCoords[0], isx=1; /*iwx<args->cornerCoords[2],*/ isx < mCOLS-1;iwx++,isx++) {
 		for (int iwy=args->cornerCoords[1], isy=1; /*iwy<args->cornerCoords[5],*/ isy < mLINES-1;iwy++, isy++) {
-			//mvwprintw(args->window_array[2], isy, isx, "%c", args->self->dat->tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
-			mvwprintw(args->window_array[2], isy, isx, "%c", tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
-			//mvwprintw(args->window_array[2], isy, isx, "%hi", args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]);
+			mvwprintw(args->window_array[2], isy, isx, "%c", args->self->dat->tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
 
 			/* Query the screen coordinates for when the map coordinates match up with player's map coordinates*/
 			if (iwy==args->p->self->ey) midY=isy;
@@ -292,16 +287,6 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	for (int i=0;i<currentMap->lines;i++) {
 		if (!fread(currentMap->mapArr+(i*50), sizeof(short)*currentMap->cols, 1, fptr)) CRASH(ENOMEM);
 	}
-
-
-	//fread(currentMap->mapArr, sizeof(short), (size_t)currentMap->lines*currentMap->cols, fptr);
-	//fprintf(stderr, "%hd\n",tileset[0]);
-	//fprintf(stderr, "%d\n",currentMap->size);
-	//for (int i=0;i<50;i++) {
-	//	for (int j=0; j<50;j++) {
-	//		fprintf(stderr, "%hi", currentMap->mapArr[i * 50 + j]);
-	//	} fprintf(stderr,"\n");
-	//}
 
 	fclose(fptr);
 
