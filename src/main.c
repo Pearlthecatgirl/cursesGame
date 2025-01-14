@@ -126,6 +126,7 @@ main_loop(struct arg *args) {
 	args->tick+=1;
 	timespec_get(args->preFrame, TIME_UTC);
 	args->cKey=getch();
+	wclear(args->window_array[2]);
 	box(args->window_array[1], 0, 0);
 	wrefresh(args->window_array[1]);
 
@@ -139,8 +140,6 @@ main_loop(struct arg *args) {
 			args->gameState=world_loop(args);
 			world_display(args);
 			mvwprintw(args->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", args->p->self->ex, args->p->self->ey, args->tick);
-
-
 			break;
 		case inventory:
 			break;
@@ -160,7 +159,7 @@ main_loop(struct arg *args) {
 
 int
 world_checkCollision(int wx, int wy, struct map *currentMap) {
-	int tile=currentMap->mapArr[wy * currentMap->cols + wx]>>8;
+	int tile=currentMap->mapArr[wy * currentMap->cols + wx];
 	fprintf(stderr, "%d\n", tile);
 		if (tile<2) return tile;
 		switch (tile) {
@@ -211,7 +210,8 @@ world_display(struct arg *args) {
 	for (int iwx=args->cornerCoords[0], isx=1; /*iwx<args->cornerCoords[2],*/ isx < mCOLS-1;iwx++,isx++) {
 		for (int iwy=args->cornerCoords[1], isy=1; /*iwy<args->cornerCoords[5],*/ isy < mLINES-1;iwy++, isy++) {
 			//mvwprintw(args->window_array[2], isy, isx, "%c", args->self->dat->tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
-			mvwprintw(args->window_array[2], isy, isx, "%c", tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]>>8]);
+			mvwprintw(args->window_array[2], isy, isx, "%c", tileset[args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]]);
+			//mvwprintw(args->window_array[2], isy, isx, "%hi", args->currentMap->mapArr[iwy * args->currentMap->cols + iwx]);
 
 			/* Query the screen coordinates for when the map coordinates match up with player's map coordinates*/
 			if (iwy==args->p->self->ey) midY=isy;
@@ -267,14 +267,14 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	if (!(access(fullpath, R_OK)==0)) CRASH(EACCES);
 	if (!(fptr=fopen(fullpath, "rb"))) CRASH(ENOMEM);
 	
-	// char *raw=malloc(sizeof(char)*(HEADER_SIZE+1));
-	// if (!raw) CRASH(ENOMEM);
-	// if (!fread(raw, sizeof(char)*(HEADER_SIZE+1), 1, fptr)) CRASH(0);
+	//char *raw=malloc(sizeof(char)*(HEADER_SIZE+1));
+	//if (!raw) CRASH(ENOMEM);
+	//if (!fread(raw, sizeof(char)*(HEADER_SIZE+1), 1, fptr)) CRASH(0);
 	char *header=malloc(sizeof(char)*(HEADER_SIZE+1));
 	if (!header) CRASH(ENOMEM);
-	if (!fread(header, sizeof(char)*(HEADER_SIZE+1), 1, fptr)) CRASH(0);
+	if (!fread(header, sizeof(char)*(HEADER_SIZE), 1, fptr)) CRASH(0);
 
-	// strncpy(header, raw, sizeof(char)*(HEADER_SIZE+1));
+	//strncpy(header, raw, sizeof(char)*(HEADER_SIZE+1));
 
 	char tmp_nameBuffer[MAX_NAME_SIZE];
 	if (!strncpy(currentMap->mapId, mapId, sizeof(char)*MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
@@ -288,14 +288,18 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	if (!currentMap->mapName) CRASH(ENOMEM);
 	if (!strncpy(currentMap->mapName, tmp_nameBuffer, sizeof(char)*strlen(tmp_nameBuffer))) CRASH(ENOMEM);
 	
-	// TODO: something is wrong here... not reading the array correctly. 
 	if (!(currentMap->mapArr=malloc(sizeof(short)*currentMap->lines*currentMap->cols))) CRASH(ENOMEM);
-	if (!fread(currentMap->mapArr, sizeof(short), (size_t)currentMap->lines*currentMap->cols, fptr)) CRASH(0);
-	fprintf(stderr, "%hd\n",tileset[0]);
-	fprintf(stderr, "%d\n",currentMap->size);
+	for (int i=0;i<currentMap->lines;i++) {
+		if (!fread(currentMap->mapArr+(i*50), sizeof(short)*currentMap->cols, 1, fptr)) CRASH(ENOMEM);
+	}
+
+
+	//fread(currentMap->mapArr, sizeof(short), (size_t)currentMap->lines*currentMap->cols, fptr);
+	//fprintf(stderr, "%hd\n",tileset[0]);
+	//fprintf(stderr, "%d\n",currentMap->size);
 	//for (int i=0;i<50;i++) {
 	//	for (int j=0; j<50;j++) {
-	//		fprintf(stderr, "%hd", tileset[currentMap->mapArr[i * 50 + j]]);
+	//		fprintf(stderr, "%hi", currentMap->mapArr[i * 50 + j]);
 	//	} fprintf(stderr,"\n");
 	//}
 
