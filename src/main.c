@@ -18,7 +18,8 @@
 //char *tileset=".#,<>";
 
 struct entity {
-	int ex, ey;
+	int ex, ey; // X and Y position
+	int r, t; // Range and Angle (theta) for direction facing and reach
 } entity;
 
 struct map {
@@ -55,8 +56,10 @@ struct arg {
 
 	short isRunning;
 	short iSMenu;
+	short autopause; // Pause during menu option
 	unsigned long long tick;
-	char cKey;
+	int cKey; // Keyboard input
+	int mX, mY; // Mouse coordinates
 
 	enum State {world, menu, inventory} gameState;
 
@@ -80,7 +83,7 @@ enum State world_loop(struct arg *args);
 
 struct arg *
 main_init(void) {
-	initscr();noecho();cbreak();clear();curs_set(0);
+	initscr();noecho();cbreak();clear();curs_set(0);keypad(stdscr, TRUE);
 	struct arg *opt=malloc(sizeof(struct arg));
 	if (!opt) CRASH(ENOMEM);
 	opt->p=malloc(sizeof(player));
@@ -133,10 +136,35 @@ main_loop(struct arg *args) {
 	if (mLINES%2) args->wOffset=2;
 	if (mCOLS%2) args->hOffset=2;
 
+	// Move the cursor
+	switch (args->cKey) {
+		case KEY_UP:
+			if (!(args->mY-1<0))args->mY-=1;
+			break;
+		case KEY_DOWN:
+			if (!(args->mY+1>mLINES))args->mY+=1;
+			break;
+		case KEY_LEFT:
+			if (!(args->mY-1<0))args->mX-=1;
+			break;
+		case KEY_RIGHT:
+			if (!(args->mY-1>mCOLS))args->mX+=1;
+			break;
+		default:
+			break;
+	}
+	char prev_curs='x';
+	if (args->tick%30) {
+		if (prev_curs=='x') {
+			prev_curs='+';
+		} else prev_curs='x';
+	}
+
 	switch (args->gameState) {
 		case world:	
 			args->gameState=world_loop(args);
 			world_display(args);
+			mvwprintw(args->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", args->p->self->ex, args->p->self->ey, args->tick);
 			mvwprintw(args->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", args->p->self->ex, args->p->self->ey, args->tick);
 			break;
 		case inventory:
@@ -149,6 +177,8 @@ main_loop(struct arg *args) {
 	
 	}
 	
+	mvwprintw(args->window_array[0],args->mY, args->mX, "%c", prev_curs);
+	wrefresh(args->window_array[0]);
 	timespec_get(args->postFrame, TIME_UTC);
 	
 	double tSetup = (args->postFrame->tv_sec - args->preFrame->tv_sec) + (args->postFrame->tv_nsec - args->preFrame->tv_nsec)/1000000000.0;
@@ -158,7 +188,6 @@ main_loop(struct arg *args) {
 int
 world_checkCollision(int wx, int wy, struct map *currentMap) {
 	int tile=currentMap->mapArr[wy * currentMap->cols + wx];
-	fprintf(stderr, "%d\n", tile);
 		if (tile<2) return tile;
 		switch (tile) {
 			default:
@@ -213,7 +242,8 @@ world_display(struct arg *args) {
 			if (iwx==args->p->self->ex) midX=isx;
 		}
 	}
-	mvwprintw(args->window_array[2], midY, midX, "@");
+	//mvwprintw(args->window_array[2], midY, midX, "@");
+	mvwaddch(args->window_array[2], midY, midX, '@');
 
 	wrefresh(args->window_array[2]);
 	wrefresh(args->window_array[1]);
@@ -299,7 +329,6 @@ void *
 util_resizePointer(void *pointer, size_t new_size) {
 	void *realloc_res=realloc(pointer, new_size);
 	if (!realloc_res) {
-		fprintf(stdout, "realloc: pointer reallocation failed.\n");
 		CRASH(ENOMEM)
 	} return realloc_res;
 }
@@ -313,9 +342,7 @@ main(int argc, char **argv) {
 	util_loadMap("./data", "MAP000.TST", args->currentMap);
 
 	refresh();
-	while (args->isRunning) {
-		main_loop(args);
-	}
+	while (args->isRunning) main_loop(args);
 
 	endwin();
 return 0;
