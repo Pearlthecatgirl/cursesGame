@@ -11,7 +11,7 @@
 #define mLINES 17 //	Max Screen size
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
-#define TARGET_TICK_RATE 20
+#define TARGET_TICK_RATE 20 
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
 
@@ -117,6 +117,9 @@ main_init(void) {
 
 	timeout(( (int) (1/((double)TARGET_TICK_RATE))*1000));
 	// Move loading map to here
+	
+
+	
 
 	opt->tick=0;
 	return opt;
@@ -154,7 +157,7 @@ main_loop(struct arg *args) {
 			break;
 	}
 	char prev_curs='x';
-	if (args->tick%30) {
+	if (args->tick%2) {
 		if (prev_curs=='x') {
 			prev_curs='+';
 		} else prev_curs='x';
@@ -177,12 +180,14 @@ main_loop(struct arg *args) {
 	
 	}
 	
+	// Move the cursor
 	mvwprintw(args->window_array[0],args->mY, args->mX, "%c", prev_curs);
 	wrefresh(args->window_array[0]);
 	timespec_get(args->postFrame, TIME_UTC);
 	
 	double tSetup = (args->postFrame->tv_sec - args->preFrame->tv_sec) + (args->postFrame->tv_nsec - args->preFrame->tv_nsec)/1000000000.0;
-	timeout((int)(((1/(double)TARGET_TICK_RATE)-tSetup)*1000));
+	int wait=(int)(((1/(double)TARGET_TICK_RATE)-tSetup)*1000);
+	timeout(wait);
 }
 
 int
