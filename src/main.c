@@ -7,7 +7,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();exit(errnum);}
+#define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();printf("\033[?1003l\n");exit(errnum);}
 #define mLINES 17 //	Max Screen size
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
@@ -59,7 +59,7 @@ struct arg {
 	short autopause; // Pause during menu option
 	unsigned long long tick;
 	int cKey; // Keyboard input
-	int mX, mY; // Mouse coordinates
+	int mX, mY; // Cursor coordinates
 
 	enum State {world, menu, inventory} gameState;
 
@@ -126,9 +126,12 @@ main_init(void) {
 
 	timeout(( (int) (1/((double)TARGET_TICK_RATE))*1000));
 	// Move loading map to here
+	// TODO: load data/map/player here later
 	
-
-	
+	// Initialize mouse input
+	keypad(stdscr, TRUE);
+	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION,NULL);
+	printf("\033[?1003h\n"); // Mouse caputre escape sequence
 
 	opt->tick=0;
 	return opt;
@@ -150,6 +153,14 @@ main_loop(struct arg *args) {
 	if (mLINES%2) args->wOffset=2;
 	if (mCOLS%2) args->hOffset=2;
 
+	if (args->cKey==KEY_MOUSE) {
+		MEVENT mouse_event;
+		if (getmouse(&mouse_event)==OK) {
+			args->mY=mouse_event.y;
+			args->mX=mouse_event.x;
+		}
+	}
+
 	// Move the cursor
 	switch (args->cKey) {
 		case KEY_UP:
@@ -167,6 +178,7 @@ main_loop(struct arg *args) {
 		default:
 			break;
 	}
+
 	char prev_curs='x';
 	if (args->tick%2) {
 		if (prev_curs=='x') {
