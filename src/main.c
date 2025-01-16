@@ -70,6 +70,7 @@ struct arg {
 } args;
 
 // Functions
+void generic_delay(int ms);
 struct arg *main_init(void);
 void main_loop(struct arg *args);
 
@@ -80,6 +81,14 @@ int world_checkCollision(int wx, int wy, struct map *currentMap);
 void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
 enum State world_loop(struct arg *args);
+
+void 
+generic_delay(int ms) {
+	long pause=ms * (CLOCKS_PER_SEC / 1000);
+	clock_t start=clock();
+	while ((clock() - start) < pause)
+	return;
+}
 
 struct arg *
 main_init(void) {
@@ -129,7 +138,9 @@ void
 main_loop(struct arg *args) {
 	args->tick+=1;
 	timespec_get(args->preFrame, TIME_UTC);
-	args->cKey=getch();
+
+	args->cKey=getch(); // Get keyboard Information
+
 	wclear(args->window_array[2]);
 	box(args->window_array[1], 0, 0);
 	wrefresh(args->window_array[1]);
