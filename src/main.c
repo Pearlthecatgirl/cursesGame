@@ -70,7 +70,10 @@ struct arg {
 } args;
 
 // Functions
+
 void generic_delay(int ms);
+void generic_drawLine(int x0, int y0, int x1, int y1);
+
 struct arg *main_init(void);
 void main_loop(struct arg *args);
 
@@ -90,6 +93,48 @@ generic_delay(int ms) {
 	return;
 }
 
+void 
+generic_drawLine(int x0, int y0, int x1, int y1) {
+	int dx=x1-x0;
+	int dy=y1-y0;
+	if (dx<0) dx*=-1;
+	if (dy<0) dy*=-1;
+	if (dx>dy) {
+		if (x0>x1) {
+			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
+			}
+			int dx=x1-x0;int dy=y1-y0;int dir=1;
+			if (dy<1) dir=-1; 
+			dy*=dir;
+			if (dx!=0) {
+				int yc=y0;int p=2*dy-dx;
+				for (int i=0;i<dx+1;i++) {
+					mvprintw(x0+i, yc, "0");
+					if (p>=0){
+						yc+=dir;p=p-2*dx;
+					} p=p+2*dy;
+				}
+			}
+	} else {
+		if (y0>y1) {
+		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
+		}
+		int dx=x1-x0;int dy=y1-y0;int dir=1;
+		if (dx<1) dir=-1; 
+		dx*=dir;
+		if (dy!=0) {
+			int xc=x0;int p=2*dx-dy;
+			for (int i=0;i<dy+1;i++) {
+				mvprintw(xc, y0+i, "0");
+				if (p>=0){
+					xc+=dir;p=p-2*dy;
+				} p=p+2*dx;
+			}
+		}
+	
+	}
+}
+
 struct arg *
 main_init(void) {
 	initscr();noecho();cbreak();clear();curs_set(0);keypad(stdscr, TRUE);
@@ -106,14 +151,13 @@ main_init(void) {
 	// set 5 tilesets for now... move into dat file later
 	opt->self->dat->tileset=malloc(sizeof(char)*6);
 	if (!opt->self->dat->tileset) CRASH(ENOMEM);
-	if (!strncpy(opt->self->dat->tileset, ".#,><", 6)) CRASH(ENOMEM);
+	if (!strncpy(opt->self->dat->tileset, ".#><", 7)) CRASH(ENOMEM);
 
 	opt->currentMap=malloc(sizeof(map));
 	if (!opt->currentMap) CRASH(ENOMEM);
 	opt->preFrame=malloc(sizeof(struct timespec));
 	opt->postFrame=malloc(sizeof(struct timespec));
 	opt->isRunning=1;	
-
 
 	opt->window_array[0]=newwin(mLINES, mCOLS, 0, 0); // Root Window (always on)
 	opt->window_array[1]=subwin(opt->window_array[0], 0, 0, 0, 0); // main UI (always on)
@@ -153,6 +197,7 @@ main_loop(struct arg *args) {
 	if (mLINES%2) args->wOffset=2;
 	if (mCOLS%2) args->hOffset=2;
 
+	// Map the game cursor to the hardware cursor
 	if (args->cKey==KEY_MOUSE) {
 		MEVENT mouse_event;
 		if (getmouse(&mouse_event)==OK) {
@@ -160,6 +205,7 @@ main_loop(struct arg *args) {
 			args->mX=mouse_event.x;
 		}
 	}
+	generic_drawLine(args->p->self->ey, args->p->self->ex, args->mY, args->mX);
 
 	// Move the cursor
 	switch (args->cKey) {
@@ -179,18 +225,10 @@ main_loop(struct arg *args) {
 			break;
 	}
 
-	char prev_curs='x';
-	if (args->tick%2) {
-		if (prev_curs=='x') {
-			prev_curs='+';
-		} else prev_curs='x';
-	}
-
 	switch (args->gameState) {
 		case world:	
 			args->gameState=world_loop(args);
 			world_display(args);
-			mvwprintw(args->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", args->p->self->ex, args->p->self->ey, args->tick);
 			mvwprintw(args->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", args->p->self->ex, args->p->self->ey, args->tick);
 			break;
 		case inventory:
@@ -200,11 +238,10 @@ main_loop(struct arg *args) {
 		default:
 			break;
 		wrefresh(args->window_array[2]);
-	
 	}
 	
 	// Move the cursor
-	mvwprintw(args->window_array[0],args->mY, args->mX, "%c", prev_curs);
+	mvwprintw(args->window_array[0],args->mY, args->mX, "X");
 	wrefresh(args->window_array[0]);
 	timespec_get(args->postFrame, TIME_UTC);
 	
