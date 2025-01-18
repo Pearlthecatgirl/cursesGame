@@ -12,6 +12,11 @@ List of planned features:
   Story: I'm not an english major. I can't write good stories. People will grill me over it. If i can, I will
 </ol>
 
+<body> 
+In terms of the engine, I would like to follow in the step of FLARE engine, another FOSS ARPG engine
+
+</body>
+
 Build:
 Requires <curses.h> and <unistd.h>. The rest are c standard libraries. Just run the Makefile for release:
 ```
