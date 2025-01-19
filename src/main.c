@@ -87,8 +87,8 @@ struct arg {
 float generic_abs_float(float ipt);
 signed long long generic_abs_int(signed long long ipt);
 void generic_delay(int ms);
-struct shape_vertex *generic_drawLine(int x0, int y0, int x1, int y1);
-struct shape_vertex *generic_drawLine_polar(int x0, int y0, int theta, int range);
+int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
+int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_vertex *shape);
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
@@ -122,18 +122,16 @@ generic_delay(int ms) {
 	return;
 }
 
-struct shape_vertex*
-generic_drawLine(int x0, int y0, int x1, int y1) {
+int
+generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	int dx=x1-x0;
 	int dy=y1-y0;
 	int dir=1;
-	struct shape_vertex *output=malloc(sizeof(struct shape_vertex));
-	if (!output) CRASH(ENOMEM);
 	if (dx<0) dx*=-1;
 	if (dy<0) dy*=-1;
 	if (dx>dy) {
-		output->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
-		if (!output->vertex) CRASH(ENOMEM);
+		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
+		if (!shape->vertex) CRASH(ENOMEM);
 		if (x0>x1) {
 			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 			}
@@ -143,23 +141,23 @@ generic_drawLine(int x0, int y0, int x1, int y1) {
 		if (dx!=0) {
 			int yc=y0;int p=2*dy-dx;
 			for (int i=0;i<dx+1;i++) {
-				output->vertex[i]=malloc(sizeof(struct _Vector));
-				if (!output->vertex[i]) CRASH(ENOMEM);
-				output->vertex[i]->degree=2;
-				output->vertex[i]->coord=malloc(sizeof(int)*output->vertex[i]->degree);
-				if (!output->vertex[i]->coord) CRASH(ENOMEM);
-				output->vertex[i]->coord[0]=x0+i;
-				output->vertex[i]->coord[1]=yc;
+				shape->vertex[i]=malloc(sizeof(struct _Vector));
+				if (!shape->vertex[i]) CRASH(ENOMEM);
+				shape->vertex[i]->degree=2;
+				shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
+				if (!shape->vertex[i]->coord) CRASH(ENOMEM);
+				shape->vertex[i]->coord[0]=x0+i;
+				shape->vertex[i]->coord[1]=yc;
 				mvprintw(yc, x0+i,"0");
 				if (p>=0){
 					yc+=dir;p=p-2*dx;
 				} p=p+2*dy;
 			}
-			return output;
+			return 1;
 		}
 	} else {
-		output->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
-		if (!output->vertex) CRASH(ENOMEM);
+		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
+		if (!shape->vertex) CRASH(ENOMEM);
 
 		if (y0>y1) {
 		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
@@ -170,28 +168,28 @@ generic_drawLine(int x0, int y0, int x1, int y1) {
 		if (dy!=0) {
 			int xc=x0;int p=2*dx-dy;
 			for (int i=0;i<dy+1;i++) {
-				output->vertex[i]=malloc(sizeof(struct _Vector));
-				if (!output->vertex[i]) CRASH(ENOMEM);
-				output->vertex[i]->degree=2;
-				output->vertex[i]->coord=malloc(sizeof(int)*output->vertex[i]->degree);
-				if (!output->vertex[i]->coord) CRASH(ENOMEM);
-				output->vertex[i]->coord[0]=xc;
-				output->vertex[i]->coord[1]=y0+i;
+				shape->vertex[i]=malloc(sizeof(struct _Vector));
+				if (!shape->vertex[i]) CRASH(ENOMEM);
+				shape->vertex[i]->degree=2;
+				shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
+				if (!shape->vertex[i]->coord) CRASH(ENOMEM);
+				shape->vertex[i]->coord[0]=xc;
+				shape->vertex[i]->coord[1]=y0+i;
 				mvprintw(y0+i,xc, "0");
 				if (p>=0){
 					xc+=dir;p=p-2*dy;
 				} p=p+2*dx;
 			}
-			return output;
+			return 1;
 		}
 	}
-	return NULL;
+	return 0;
 }
 
-struct shape_vertex *
-generic_drawLine_polar(int xi, int yi, int theta, int range) {
+int
+generic_drawLine_polar(int xi, int yi, int theta, int range, struct shape_vertex *shape) {
 	int endpt[2]={round(xi-range * (cos(theta))), round(yi -range * (sin(theta)))};
-	return generic_drawLine(xi, yi, endpt[0], endpt[1]);
+	return generic_drawLine(xi, yi, endpt[0], endpt[1], shape);
 }
 
 struct arg *
@@ -366,9 +364,10 @@ world_display(struct arg *args) {
 		}
 	}
 	//mvwprintw(args->window_array[2], midY, midX, "@");
-	//struct shape_vertex *shape=generic_drawLine(midX, midY, args->mX, args->mY);
-	//util_displayShape(args->window_array[2], shape,'0');
-	util_displayShape(args->window_array[2], generic_drawLine(midX, midY, args->mX, args->mY),'0');
+	struct shape_vertex *shape=malloc(sizeof(struct shape_vertex));
+	if (!generic_drawLine(midX, midY, args->mX, args->mY, shape))
+	util_displayShape(args->window_array[2], shape,'0');
+	//util_displayShape(args->window_array[2], generic_drawLine(midX, midY, args->mX, args->mY),'0');
 	mvwaddch(args->window_array[2], midY, midX, '@');
 
 	wrefresh(args->window_array[2]);
