@@ -14,6 +14,9 @@
 #define TARGET_TICK_RATE 20 
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
 
 //char *tileset=".#,<>";
 
@@ -87,7 +90,7 @@ float generic_abs_float(float ipt);
 signed long long generic_abs_int(signed long long ipt);
 void generic_delay(int ms);
 struct _Line_discrete *generic_drawLine(int x0, int y0, int x1, int y1);
-struct _Line_discrete *generic_drawLine_polar(int x0, int y0, int x1, int y1);
+struct _Line_discrete *generic_drawLine_polar(int x0, int y0, int theta, int range);
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
@@ -184,6 +187,13 @@ generic_drawLine(int x0, int y0, int x1, int y1) {
 		}
 	}
 	return NULL;
+}
+
+struct _Line_discrete *
+generic_drawLine_polar(int xi, int yi, int theta, int range) {
+	// angle in radian
+	int endpt[2]={round(xi-range * (cos((M_PI/180)*theta))), round(yi -range * (sin((M_PI/180)*theta)))};
+	return generic_drawLine(xi, yi, endpt[0], endpt[1]);
 }
 
 struct arg *
