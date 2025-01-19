@@ -83,7 +83,6 @@ struct arg {
 } args;
 
 // Functions
-
 float generic_abs_float(float ipt);
 signed long long generic_abs_int(signed long long ipt);
 void generic_delay(int ms);
@@ -124,19 +123,20 @@ void
 generic_drawLine(int x0, int y0, int x1, int y1) {
 	int dx=x1-x0;
 	int dy=y1-y0;
+	int dir=1;
 	if (dx<0) dx*=-1;
 	if (dy<0) dy*=-1;
 	if (dx>dy) {
 		if (x0>x1) {
 			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 			}
-			int dx=x1-x0;int dy=y1-y0;int dir=1;
+			int dx=x1-x0;int dy=y1-y0;
 			if (dy<1) dir=-1; 
 			dy*=dir;
 			if (dx!=0) {
 				int yc=y0;int p=2*dy-dx;
 				for (int i=0;i<dx+1;i++) {
-					mvprintw(x0+i, yc, "0");
+					mvprintw(yc, x0+i,"0");
 					if (p>=0){
 						yc+=dir;p=p-2*dx;
 					} p=p+2*dy;
@@ -146,13 +146,13 @@ generic_drawLine(int x0, int y0, int x1, int y1) {
 		if (y0>y1) {
 		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 		}
-		int dx=x1-x0;int dy=y1-y0;int dir=1;
+		int dx=x1-x0;int dy=y1-y0;
 		if (dx<1) dir=-1; 
 		dx*=dir;
 		if (dy!=0) {
 			int xc=x0;int p=2*dx-dy;
 			for (int i=0;i<dy+1;i++) {
-				mvprintw(xc, y0+i, "0");
+				mvprintw(y0+i,xc, "0");
 				if (p>=0){
 					xc+=dir;p=p-2*dy;
 				} p=p+2*dx;
@@ -334,9 +334,7 @@ world_display(struct arg *args) {
 		}
 	}
 	//mvwprintw(args->window_array[2], midY, midX, "@");
-	//generic_drawLine(midY, midX, args->mY, args->mX);
-	generic_drawLine(midY, midX, args->mY+2, args->mX-2);
-	generic_drawLine(midY, midX, args->mY-2, args->mX-2);
+	generic_drawLine(midX, midY, args->mX, args->mY);
 	mvwaddch(args->window_array[2], midY, midX, '@');
 
 	wrefresh(args->window_array[2]);
