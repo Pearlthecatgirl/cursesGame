@@ -17,6 +17,16 @@
 
 //char *tileset=".#,<>";
 
+struct _Vector {
+	int *co; // coorindate
+	int degree; // number of coordinates
+};
+
+struct _Line_discrete {
+	struct _Vector *points; // each coordinate of each point
+	int pointc; // number of points
+};
+
 struct entity {
 	int ex, ey; // X and Y position
 	int r, t; // Range and Angle (theta) for direction facing and reach
@@ -35,8 +45,11 @@ struct player {
 	char saveId[MAX_FILE_NAME_SIZE];
 	char Name[20];
 
+	// Onscreen location of the character
+	int screenx, screeny;
+
 	// Spawn/respawning
-	int resx,resy;
+	int resx, resy;
 	char *last_open_mapId;
 } player;
 
@@ -205,7 +218,6 @@ main_loop(struct arg *args) {
 			args->mX=mouse_event.x;
 		}
 	}
-	generic_drawLine(args->p->self->ey, args->p->self->ex, args->mY, args->mX);
 
 	// Move the cursor
 	switch (args->cKey) {
@@ -308,6 +320,9 @@ world_display(struct arg *args) {
 		}
 	}
 	//mvwprintw(args->window_array[2], midY, midX, "@");
+	//generic_drawLine(midY, midX, args->mY, args->mX);
+	generic_drawLine(midY, midX, args->mY+2, args->mX-2);
+	generic_drawLine(midY, midX, args->mY-2, args->mX-2);
 	mvwaddch(args->window_array[2], midY, midX, '@');
 
 	wrefresh(args->window_array[2]);
