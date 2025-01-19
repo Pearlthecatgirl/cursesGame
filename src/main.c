@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();printf("\033[?1003l\n");exit(errnum);}
+#define WARN(msg) {fprintf(stderr, "Warning: %s Might crash soon... (line: %d)\n", msg, __LINE__);}
 #define mLINES 17 //	Max Screen size
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
@@ -186,6 +187,7 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	return 0;
 }
 
+/*This function returns the return code from the inner function. NOT A SHAPE ARRAY*/
 int
 generic_drawLine_polar(int xi, int yi, int theta, int range, struct shape_vertex *shape) {
 	int endpt[2]={round(xi-range * (cos(theta))), round(yi -range * (sin(theta)))};
@@ -365,7 +367,7 @@ world_display(struct arg *args) {
 	}
 	//mvwprintw(args->window_array[2], midY, midX, "@");
 	struct shape_vertex *shape=malloc(sizeof(struct shape_vertex));
-	if (!generic_drawLine(midX, midY, args->mX, args->mY, shape))
+	if (!generic_drawLine(midX, midY, args->mX, args->mY, shape)) WARN("Some issue occured and shape was not drawn. ");
 	util_displayShape(args->window_array[2], shape,'0');
 	//util_displayShape(args->window_array[2], generic_drawLine(midX, midY, args->mX, args->mY),'0');
 	mvwaddch(args->window_array[2], midY, midX, '@');
