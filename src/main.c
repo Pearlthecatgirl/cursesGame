@@ -84,6 +84,8 @@ struct arg {
 
 // Functions
 
+float generic_abs_float(float ipt);
+signed long long generic_abs_int(signed long long ipt);
 void generic_delay(int ms);
 void generic_drawLine(int x0, int y0, int x1, int y1);
 
@@ -97,6 +99,18 @@ int world_checkCollision(int wx, int wy, struct map *currentMap);
 void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
 enum State world_loop(struct arg *args);
+
+float
+generic_abs_float(float ipt) {
+	if (ipt>0) return ipt;
+	return ipt*=-1;
+}
+
+signed long long 
+generic_abs_int(signed long long ipt) {
+	if (ipt>0) return ipt;
+	return ipt*=-1;
+}
 
 void 
 generic_delay(int ms) {
