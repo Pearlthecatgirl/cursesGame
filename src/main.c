@@ -18,8 +18,6 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-//char *tileset=".#,<>";
-
 struct _Vector {
 	int *coord; // coorindate
 	int degree; // number of coordinates
@@ -189,10 +187,10 @@ generic_drawLine(int x0, int y0, int x1, int y1) {
 	return NULL;
 }
 
+/*DOCUMENTATION: theta is in radians*/
 struct _Line_discrete *
 generic_drawLine_polar(int xi, int yi, int theta, int range) {
-	// angle in radian
-	int endpt[2]={round(xi-range * (cos((M_PI/180)*theta))), round(yi -range * (sin((M_PI/180)*theta)))};
+	int endpt[2]={round(xi-range * (cos(theta))), round(yi -range * (sin(theta)))};
 	return generic_drawLine(xi, yi, endpt[0], endpt[1]);
 }
 
