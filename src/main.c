@@ -18,12 +18,12 @@
 //char *tileset=".#,<>";
 
 struct _Vector {
-	int *co; // coorindate
+	int *coord; // coorindate
 	int degree; // number of coordinates
 };
 
 struct _Line_discrete {
-	struct _Vector *points; // each coordinate of each point
+	struct _Vector **points; // each coordinate of each point
 	int pointc; // number of points
 };
 
@@ -86,7 +86,8 @@ struct arg {
 float generic_abs_float(float ipt);
 signed long long generic_abs_int(signed long long ipt);
 void generic_delay(int ms);
-void generic_drawLine(int x0, int y0, int x1, int y1);
+struct _Line_discrete *generic_drawLine(int x0, int y0, int x1, int y1);
+struct _Line_discrete *generic_drawLine_polar(int x0, int y0, int x1, int y1);
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
@@ -119,30 +120,45 @@ generic_delay(int ms) {
 	return;
 }
 
-void 
+struct _Line_discrete*
 generic_drawLine(int x0, int y0, int x1, int y1) {
 	int dx=x1-x0;
 	int dy=y1-y0;
 	int dir=1;
+	struct _Line_discrete *output=malloc(sizeof(struct _Line_discrete));
+	if (!output) CRASH(ENOMEM);
 	if (dx<0) dx*=-1;
 	if (dy<0) dy*=-1;
 	if (dx>dy) {
+		output->points=malloc(sizeof(struct _Vector *)*(dx+1));
+		if (!output->points) CRASH(ENOMEM);
 		if (x0>x1) {
 			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 			}
-			int dx=x1-x0;int dy=y1-y0;
-			if (dy<1) dir=-1; 
-			dy*=dir;
-			if (dx!=0) {
-				int yc=y0;int p=2*dy-dx;
-				for (int i=0;i<dx+1;i++) {
-					mvprintw(yc, x0+i,"0");
-					if (p>=0){
-						yc+=dir;p=p-2*dx;
-					} p=p+2*dy;
-				}
+		int dx=x1-x0;int dy=y1-y0;
+		if (dy<1) dir=-1; 
+		dy*=dir;
+		if (dx!=0) {
+			int yc=y0;int p=2*dy-dx;
+			for (int i=0;i<dx+1;i++) {
+				output->points[i]=malloc(sizeof(struct _Vector));
+				if (!output->points[i]) CRASH(ENOMEM);
+				output->points[i]->degree=2;
+				output->points[i]->coord=malloc(sizeof(int)*output->points[i]->degree);
+				if (!output->points[i]->coord) CRASH(ENOMEM);
+				output->points[i]->coord[0]=x0+i;
+				output->points[i]->coord[1]=yc;
+				mvprintw(yc, x0+i,"0");
+				if (p>=0){
+					yc+=dir;p=p-2*dx;
+				} p=p+2*dy;
 			}
+			return output;
+		}
 	} else {
+		output->points=malloc(sizeof(struct _Vector *)*(dy+1));
+		if (!output->points) CRASH(ENOMEM);
+
 		if (y0>y1) {
 		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 		}
@@ -152,14 +168,22 @@ generic_drawLine(int x0, int y0, int x1, int y1) {
 		if (dy!=0) {
 			int xc=x0;int p=2*dx-dy;
 			for (int i=0;i<dy+1;i++) {
+				output->points[i]=malloc(sizeof(struct _Vector));
+				if (!output->points[i]) CRASH(ENOMEM);
+				output->points[i]->degree=2;
+				output->points[i]->coord=malloc(sizeof(int)*output->points[i]->degree);
+				if (!output->points[i]->coord) CRASH(ENOMEM);
+				output->points[i]->coord[0]=xc;
+				output->points[i]->coord[1]=y0+i;
 				mvprintw(y0+i,xc, "0");
 				if (p>=0){
 					xc+=dir;p=p-2*dy;
 				} p=p+2*dx;
 			}
+			return output;
 		}
-	
 	}
+	return NULL;
 }
 
 struct arg *
