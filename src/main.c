@@ -85,8 +85,6 @@ struct arg {
 } args;
 
 // Functions
-float generic_abs_float(float ipt);
-signed long long generic_abs_int(signed long long ipt);
 void generic_delay(int ms);
 int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
 int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_vertex *shape);
@@ -97,6 +95,7 @@ void main_loop(struct arg *args);
 void util_displayShape(WINDOW *window, struct shape_vertex *shape, char material);
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
 void *util_resizePointer(void *pointer, size_t new_size);
+int util_cleanShape(struct shape_vertex *shape);
 
 int world_checkCollision(int wx, int wy, struct map *currentMap);
 void world_defineCorners(int px, int py, int *output);
@@ -131,8 +130,9 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	if (dx<0) dx*=-1;
 	if (dy<0) dy*=-1;
 	if (dx>dy) {
-		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
+		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+2));
 		if (!shape->vertex) CRASH(ENOMEM);
+		shape->pointc=dx+2;
 		if (x0>x1) {
 			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 			}
@@ -157,9 +157,9 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 			return 1;
 		}
 	} else {
-		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
+		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+2));
 		if (!shape->vertex) CRASH(ENOMEM);
-
+		shape->pointc=dy+2;
 		if (y0>y1) {
 		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 		}
@@ -476,7 +476,11 @@ main(int argc, char **argv) {
 	util_loadMap("./data", "MAP000.TST", args->currentMap);
 
 	refresh();
-	while (args->isRunning) main_loop(args);
+
+	struct shape_vertex *shape=malloc(sizeof(struct shape_vertex));
+	if (!generic_drawLine(4,4, 9,9, shape)) WARN("Some issue occured and shape was not drawn. ");
+	util_displayShape(args->window_array[2], shape,'0');
+//	while (args->isRunning) main_loop(args);
 
 	endwin();
 return 0;
