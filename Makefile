@@ -1,8 +1,8 @@
-build:
+BUILD:
 	gcc -std=c11 ./src/*.c -lcurses -lm -lc -Wall -Wextra -Wpedantic
-debug:
+DEBUG:
 	gcc -std=c11 ./src/*.c -lcurses -lm -lc -g -o debug -Wall -Wextra -Wpedantic
-release:
+RELEASE:
 	gcc -std=c11 ./src/*.c -lcurses -lm -lc -s -o prog -Wall -Wextra -Wpedantic -Werror
-clean:
-	rm ./*.o
+CLEAN:
+	rm ./prog ./*.o ./*.out ./debug
