@@ -130,9 +130,10 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	if (dx<0) dx*=-1;
 	if (dy<0) dy*=-1;
 	if (dx>dy) {
-		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+2));
+		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
 		if (!shape->vertex) CRASH(ENOMEM);
-		shape->pointc=dx+2;
+		fprintf(stderr, "dx num: %d, (%d)\n", dx, dx+1);
+		shape->pointc=dx+1;
 		if (x0>x1) {
 			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 			}
@@ -157,9 +158,10 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 			return 1;
 		}
 	} else {
-		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+2));
+		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
 		if (!shape->vertex) CRASH(ENOMEM);
-		shape->pointc=dy+2;
+		fprintf(stderr, "dy num: %d, (%d)\n", dy, dy+1);
+		shape->pointc=dy+1;
 		if (y0>y1) {
 		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
 		}
@@ -478,9 +480,13 @@ main(int argc, char **argv) {
 	refresh();
 
 	struct shape_vertex *shape=malloc(sizeof(struct shape_vertex));
-	if (!generic_drawLine(4,4, 9,9, shape)) WARN("Some issue occured and shape was not drawn. ");
+	if (!generic_drawLine(4,4, 6,9, shape)) WARN("Some issue occured and shape was not drawn. ");
+	//fprintf(stderr, "%d\n", shape->pointc);
+	//for (int i=0;i<shape->pointc;i++) {
+	//	fprintf(stderr, "%d, %d\n", shape->vertex[i]->coord[0], shape->vertex[i]->coord[1]);
+	//}
 	util_displayShape(args->window_array[2], shape,'0');
-//	while (args->isRunning) main_loop(args);
+	while (args->isRunning) main_loop(args);
 
 	endwin();
 return 0;
