@@ -1,11 +1,12 @@
-#include <curses.h>
-#include <errno.h>
+#include <curses.h> // This may not be as portable
+#include <errno.h> // This may not be as portable
 #include <math.h>
+#include <pthread.h> // This may not be as portable
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
+#include <unistd.h> // This may not be as portable
 
 #define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();printf("\033[?1003l\n");exit(errnum);}
 #define WARN(msg) {fprintf(stderr, "Warning: %s Might crash soon... (line: %d)\n", msg, __LINE__);}
@@ -19,6 +20,7 @@
     #define M_PI 3.14159265358979323846
 #endif
 
+// #! Structs
 struct _Vector {
 	int *coord; // coorindate
 	int degree; // number of coordinates
@@ -84,7 +86,7 @@ struct arg {
 	int wOffset, hOffset;
 } args;
 
-// Functions
+// #!Functions
 void generic_delay(int ms);
 int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
 int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_vertex *shape);
@@ -100,7 +102,8 @@ int util_cleanShape(struct shape_vertex *shape);
 int world_checkCollision(int wx, int wy, struct map *currentMap);
 void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
-enum State world_loop(struct arg *args);
+//enum State world_loop(struct arg *args);
+void *world_loop(void *args);
 
 float
 generic_abs_float(float ipt) {
@@ -379,39 +382,42 @@ world_display(struct arg *args) {
 	wrefresh(args->window_array[1]);
 }
 
-enum State 
-world_loop(struct arg *args) {
-	switch (args->cKey) {
+//enum State 
+void *
+world_loop(void *args) {
+	struct arg *cArgs=(struct arg *)args;
+	switch (cArgs->cKey) {
 		case'w':
-			if (!world_checkCollision(args->p->self->ex,args->p->self->ey-1,args->currentMap)) {
-				args->p->self->ey-=1;
+			if (!world_checkCollision(cArgs->p->self->ex,cArgs->p->self->ey-1,cArgs->currentMap)) {
+				cArgs->p->self->ey-=1;
 			}
 			break;
 		case's':
-			if (!world_checkCollision(args->p->self->ex,args->p->self->ey+1,args->currentMap)) {
-				args->p->self->ey+=1;
+			if (!world_checkCollision(cArgs->p->self->ex,cArgs->p->self->ey+1,cArgs->currentMap)) {
+				cArgs->p->self->ey+=1;
 			}
 			break;
 		case'a':
-			if (!world_checkCollision(args->p->self->ex-1, args->p->self->ey,args->currentMap)) {
-				args->p->self->ex-=1;
+			if (!world_checkCollision(cArgs->p->self->ex-1, cArgs->p->self->ey,cArgs->currentMap)) {
+				cArgs->p->self->ex-=1;
 			}
 			break;
 		case'd':
-			if (!world_checkCollision(args->p->self->ex+1, args->p->self->ey,args->currentMap)) {
-				args->p->self->ex+=1;
+			if (!world_checkCollision(cArgs->p->self->ex+1, cArgs->p->self->ey,cArgs->currentMap)) {
+				cArgs->p->self->ex+=1;
 			}
 			break;
 		case'e':
-				return inventory;	
+			cArgs->gameState=inventory;
 			break;
 		case'r':
-			args->p->self->ex=25;
-			args->p->self->ey=25;
+			cArgs->p->self->ex=25;
+			cArgs->p->self->ey=25;
 			break;
-		case'q':args->isRunning=0;
+		case'q':cArgs->isRunning=0;
 	}
-	return world;
+	cArgs->gameState=world;
+	return NULL;
 }
 
 void
