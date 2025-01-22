@@ -288,7 +288,7 @@ main_loop(struct arg *args) {
 
 	switch (args->gameState) {
 		case world:	
-			args->gameState=world_loop(args);
+			world_loop(args);
 			world_display(args);
 			mvwprintw(args->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", args->p->self->ex, args->p->self->ey, args->tick);
 			break;
