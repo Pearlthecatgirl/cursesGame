@@ -150,7 +150,6 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 				if (!shape->vertex[i]->coord) CRASH(ENOMEM);
 				shape->vertex[i]->coord[0]=x0+i;
 				shape->vertex[i]->coord[1]=yc;
-				mvprintw(yc, x0+i,"0");
 				if (p>=0){
 					yc+=dir;p=p-2*dx;
 				} p=p+2*dy;
@@ -178,7 +177,6 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 				if (!shape->vertex[i]->coord) CRASH(ENOMEM);
 				shape->vertex[i]->coord[0]=xc;
 				shape->vertex[i]->coord[1]=y0+i;
-				mvprintw(y0+i,xc, "0");
 				if (p>=0){
 					xc+=dir;p=p-2*dy;
 				} p=p+2*dx;
@@ -368,9 +366,12 @@ world_display(struct arg *args) {
 		}
 	}
 	//mvwprintw(args->window_array[2], midY, midX, "@");
-	struct shape_vertex *shape=malloc(sizeof(struct shape_vertex));
-	if (!generic_drawLine(midX, midY, args->mX, args->mY, shape)) WARN("Some issue occured and shape was not drawn. ");
-	util_displayShape(args->window_array[2], shape,'0');
+	struct shape_vertex *cursorLine=malloc(sizeof(struct shape_vertex));
+	if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
+	for (int i=0;i<cursorLine->pointc;i++) {
+		mvprintw(i+1,mCOLS+3, "%d, %d", cursorLine->vertex[i]->coord[0], cursorLine->vertex[i]->coord[1]);
+	}
+	util_displayShape(args->window_array[2], cursorLine,'0');
 	//util_displayShape(args->window_array[2], generic_drawLine(midX, midY, args->mX, args->mY),'0');
 	mvwaddch(args->window_array[2], midY, midX, '@');
 
@@ -416,7 +417,7 @@ world_loop(struct arg *args) {
 void
 util_displayShape(WINDOW *window, struct shape_vertex *shape, char material) {
 	for (int i=0;i<shape->pointc;i++) {
-		mvwprintw(window, shape->vertex[i]->coord[0], shape->vertex[i]->coord[1], "%c", material);
+		mvwprintw(window, shape->vertex[i]->coord[1], shape->vertex[i]->coord[0], "%c", material);
 	}
 }
 
@@ -479,13 +480,6 @@ main(int argc, char **argv) {
 
 	refresh();
 
-	struct shape_vertex *shape=malloc(sizeof(struct shape_vertex));
-	if (!generic_drawLine(4,4, 6,9, shape)) WARN("Some issue occured and shape was not drawn. ");
-	//fprintf(stderr, "%d\n", shape->pointc);
-	//for (int i=0;i<shape->pointc;i++) {
-	//	fprintf(stderr, "%d, %d\n", shape->vertex[i]->coord[0], shape->vertex[i]->coord[1]);
-	//}
-	util_displayShape(args->window_array[2], shape,'0');
 	while (args->isRunning) main_loop(args);
 
 	endwin();
