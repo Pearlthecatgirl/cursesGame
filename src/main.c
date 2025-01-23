@@ -74,13 +74,14 @@ struct arg {
 	short isRunning;
 	short iSMenu;
 	short autopause; // Pause during menu option
-	unsigned long long tick;
+	unsigned long long tick, frame;
 	int cKey; // Keyboard input
 	int mX, mY; // Cursor coordinates
 
 	enum State {world, menu, inventory} gameState;
 
 	struct timespec *preFrame, *postFrame;
+	struct timespec *preTick, *postTick;
 	
 	int cornerCoords[2 * 2 * 2];
 	int wOffset, hOffset;
@@ -93,6 +94,7 @@ int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_ve
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
+void *main_loopCalculation(void *args);
 
 void util_displayShape(WINDOW *window, struct shape_vertex *shape, char material);
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
@@ -285,7 +287,6 @@ main_loop(struct arg *args) {
 		default:
 			break;
 	}
-
 	switch (args->gameState) {
 		case world:	
 			world_loop(args);
@@ -300,6 +301,7 @@ main_loop(struct arg *args) {
 			break;
 		wrefresh(args->window_array[2]);
 	}
+
 	
 	// Move the cursor
 	mvwprintw(args->window_array[0],args->mY, args->mX, "X");
@@ -309,6 +311,32 @@ main_loop(struct arg *args) {
 	double tSetup = (args->postFrame->tv_sec - args->preFrame->tv_sec) + (args->postFrame->tv_nsec - args->preFrame->tv_nsec)/1000000000.0;
 	int wait=(int)(((1/(double)TARGET_TICK_RATE)-tSetup)*1000);
 	timeout(wait);
+}
+
+void *
+main_loopCalculation(void *args) {
+	struct arg *cArgs=(struct arg *)args;
+	cArgs->tick++;
+	timespec_get(cArgs->preTick, TIME_UTC);
+	
+	switch (cArgs->gameState) {
+		case world:	
+			world_loop(cArgs);
+			world_display(cArgs);
+			mvwprintw(cArgs->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", cArgs->p->self->ex, cArgs->p->self->ey, cArgs->tick);
+			break;
+		case inventory:
+			break;
+		case menu:
+			break;
+		default:
+			break;
+		wrefresh(cArgs->window_array[2]);
+	}
+
+	timespec_get(cArgs->postFrame, TIME_UTC);
+
+	return NULL;
 }
 
 int
@@ -486,7 +514,7 @@ main(int argc, char **argv) {
 
 	refresh();
 
-	while (args->isRunning) main_loop(args);
+	main_loop(args);
 
 	endwin();
 return 0;
