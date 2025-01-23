@@ -340,11 +340,9 @@ main_loopCalculation(void *args) {
 	// TODO: UNTESTED. TEST THIS
 	timespec_get(cArgs->postTick, TIME_UTC);
 	struct timespec wait_ns;
-	wait_ns.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
+	wait_ns.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000L)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
 
 	nanosleep(&wait_ns, NULL);
-
-	//timeout(wait_ns);
 
 	return NULL;
 }
