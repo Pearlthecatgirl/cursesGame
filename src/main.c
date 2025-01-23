@@ -340,10 +340,8 @@ main_loopCalculation(void *args) {
 	}
 
 	timespec_get(cArgs->postTick, TIME_UTC);
-	int setup_s = (cArgs->postFrame-cArgs->preFrame->tv_sec) *1000000000; // multiply by 1 billion (nano is 10^-9
-	int setup_ns= (cArgs->postFrame-cArgs->preFrame->tv_nsec);
-	int setup=setup_s+setup_ns;
-	int wait_ns=g_tickPeriod
+	int wait_ns=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
+	timeout(wait_ns);
 
 	return NULL;
 }
