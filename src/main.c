@@ -321,29 +321,31 @@ main_loop(struct arg *args) {
 void *
 main_loopCalculation(void *args) {
 	struct arg *cArgs=(struct arg *)args;
-	cArgs->tick++;
-	timespec_get(cArgs->preTick, TIME_UTC);
+
+	while (cArgs->isRunning) {
+		cArgs->tick++;
+		timespec_get(cArgs->preTick, TIME_UTC);
+		
+		switch (cArgs->gameState) {
+			case world:	
+				world_loop(cArgs);
+				break;
+			case inventory:
+				break;
+			case menu:
+				break;
+			default:
+				break;
+			wrefresh(cArgs->window_array[2]);
+		}
 	
-	switch (cArgs->gameState) {
-		case world:	
-			world_loop(cArgs);
-			break;
-		case inventory:
-			break;
-		case menu:
-			break;
-		default:
-			break;
-		wrefresh(cArgs->window_array[2]);
-	}
-
-	// TODO: UNTESTED. TEST THIS
-	timespec_get(cArgs->postTick, TIME_UTC);
-	struct timespec wait_ns;
-	wait_ns.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000L)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
-
-	nanosleep(&wait_ns, NULL);
-
+		// TODO: UNTESTED. TEST THIS
+		timespec_get(cArgs->postTick, TIME_UTC);
+		struct timespec wait_ns;
+		wait_ns.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000L)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
+	
+		nanosleep(&wait_ns, NULL);
+	}	
 	return NULL;
 }
 
