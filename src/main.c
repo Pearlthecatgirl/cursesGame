@@ -14,11 +14,17 @@
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
 #define TARGET_TICK_RATE 20 
+#define TARGET_FRAME_RATE 60
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
+
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
+
+// #! Global
+const int g_tickPeriod=1.0/TARGET_TICK_RATE*1000000000;
+const int g_framePeriod=1.0/TARGET_FRAME_RATE*1000000000;
 
 // #! Structs
 struct _Vector {
@@ -80,6 +86,7 @@ struct arg {
 
 	enum State {world, menu, inventory} gameState;
 
+	// Frame and tick time
 	struct timespec *preFrame, *postFrame;
 	struct timespec *preTick, *postTick;
 	
@@ -322,8 +329,6 @@ main_loopCalculation(void *args) {
 	switch (cArgs->gameState) {
 		case world:	
 			world_loop(cArgs);
-			world_display(cArgs);
-			mvwprintw(cArgs->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", cArgs->p->self->ex, cArgs->p->self->ey, cArgs->tick);
 			break;
 		case inventory:
 			break;
@@ -334,7 +339,11 @@ main_loopCalculation(void *args) {
 		wrefresh(cArgs->window_array[2]);
 	}
 
-	timespec_get(cArgs->postFrame, TIME_UTC);
+	timespec_get(cArgs->postTick, TIME_UTC);
+	int setup_s = (cArgs->postFrame-cArgs->preFrame->tv_sec) *1000000000; // multiply by 1 billion (nano is 10^-9
+	int setup_ns= (cArgs->postFrame-cArgs->preFrame->tv_nsec);
+	int setup=setup_s+setup_ns;
+	int wait_ns=g_tickPeriod
 
 	return NULL;
 }
