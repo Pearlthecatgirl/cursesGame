@@ -104,6 +104,7 @@ int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_ve
 struct arg *main_init(void);
 void main_loop(struct arg *args);
 void *main_loopCalculation(void *args);
+void *main_loopDisplay(void *args);
 
 void util_displayShape(WINDOW *window, struct shape_vertex *shape, char material);
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
@@ -113,8 +114,8 @@ int util_cleanShape(struct shape_vertex *shape);
 int world_checkCollision(int wx, int wy, struct map *currentMap);
 void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
-//enum State world_loop(struct arg *args);
-void *world_loop(void *args);
+enum State world_loop(struct arg *args);
+//void *world_loop(void *args);
 
 float
 generic_abs_float(float ipt) {
@@ -256,7 +257,6 @@ main_init(void) {
 
 void
 main_loop(struct arg *args) {
-	args->tick+=1;
 	timespec_get(args->preFrame, TIME_UTC);
 
 	args->cKey=getch(); // Get keyboard Information
@@ -310,7 +310,6 @@ main_loop(struct arg *args) {
 			break;
 		wrefresh(args->window_array[2]);
 	}
-
 	
 	// Move the cursor
 	mvwprintw(args->window_array[0],args->mY, args->mX, "X");
@@ -421,41 +420,40 @@ world_display(struct arg *args) {
 }
 
 //enum State 
-void *
-world_loop(void *args) {
-	struct arg *cArgs=(struct arg *)args;
-	switch (cArgs->cKey) {
+enum State
+world_loop(struct arg *args) {
+	switch (args->cKey) {
 		case'w':
-			if (!world_checkCollision(cArgs->p->self->ex,cArgs->p->self->ey-1,cArgs->currentMap)) {
-				cArgs->p->self->ey-=1;
+			if (!world_checkCollision(args->p->self->ex,args->p->self->ey-1,args->currentMap)) {
+				args->p->self->ey-=1;
 			}
 			break;
 		case's':
-			if (!world_checkCollision(cArgs->p->self->ex,cArgs->p->self->ey+1,cArgs->currentMap)) {
-				cArgs->p->self->ey+=1;
+			if (!world_checkCollision(args->p->self->ex,args->p->self->ey+1,args->currentMap)) {
+				args->p->self->ey+=1;
 			}
 			break;
 		case'a':
-			if (!world_checkCollision(cArgs->p->self->ex-1, cArgs->p->self->ey,cArgs->currentMap)) {
-				cArgs->p->self->ex-=1;
+			if (!world_checkCollision(args->p->self->ex-1, args->p->self->ey,args->currentMap)) {
+				args->p->self->ex-=1;
 			}
 			break;
 		case'd':
-			if (!world_checkCollision(cArgs->p->self->ex+1, cArgs->p->self->ey,cArgs->currentMap)) {
-				cArgs->p->self->ex+=1;
+			if (!world_checkCollision(args->p->self->ex+1, args->p->self->ey,args->currentMap)) {
+				args->p->self->ex+=1;
 			}
 			break;
 		case'e':
-			cArgs->gameState=inventory;
+			args->gameState=inventory;
 			break;
 		case'r':
-			cArgs->p->self->ex=25;
-			cArgs->p->self->ey=25;
+			args->p->self->ex=25;
+			args->p->self->ey=25;
 			break;
-		case'q':cArgs->isRunning=0;
+		case'q':args->isRunning=0;
 	}
-	cArgs->gameState=world;
-	return NULL;
+	args->gameState=world;
+	return world;
 }
 
 void
