@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 199309L
+
 #include <curses.h> // This may not be as portable
 #include <errno.h> // This may not be as portable
 #include <math.h>
@@ -314,10 +316,6 @@ main_loop(struct arg *args) {
 	mvwprintw(args->window_array[0],args->mY, args->mX, "X");
 	wrefresh(args->window_array[0]);
 	timespec_get(args->postFrame, TIME_UTC);
-	
-	double tSetup = (args->postFrame->tv_sec - args->preFrame->tv_sec) + (args->postFrame->tv_nsec - args->preFrame->tv_nsec)/1000000000.0;
-	int wait=(int)(((1/(double)TARGET_TICK_RATE)-tSetup)*1000);
-	timeout(wait);
 }
 
 void *
@@ -339,9 +337,14 @@ main_loopCalculation(void *args) {
 		wrefresh(cArgs->window_array[2]);
 	}
 
+	// TODO: UNTESTED. TEST THIS
 	timespec_get(cArgs->postTick, TIME_UTC);
-	int wait_ns=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
-	timeout(wait_ns);
+	struct timespec wait_ns;
+	wait_ns.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
+
+	nanosleep(&wait_ns, NULL);
+
+	//timeout(wait_ns);
 
 	return NULL;
 }
