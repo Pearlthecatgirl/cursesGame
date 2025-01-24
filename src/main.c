@@ -107,7 +107,6 @@ struct arg {
 void generic_delay(const unsigned long int ms, const unsigned long int unit);
 int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
 int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_vertex *shape);
-void generic_sleep_ms(int ms);
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
@@ -123,12 +122,6 @@ int world_checkCollision(int wx, int wy, struct map *currentMap);
 void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
 enum State world_loop(struct arg *args);
-
-float
-generic_abs_float(float ipt) {
-	if (ipt>0) return ipt;
-	return ipt*=-1;
-}
 
 signed long long 
 generic_abs_int(signed long long ipt) {
@@ -355,8 +348,8 @@ main_loopCalculation(void *args) {
 	
 		// TODO: UNTESTED. TEST THIS
 		timespec_get(cArgs->postTick, TIME_UTC);
-		struct timespec wait_ms;
-		wait_ms.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000L)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
+		//struct timespec wait_ms;
+		//wait_ms.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000L)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
 	
 	}	
 	return NULL;
