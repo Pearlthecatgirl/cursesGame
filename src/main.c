@@ -104,7 +104,7 @@ struct arg {
 } args;
 
 // #!Functions
-void generic_delay(int ms);
+void generic_delay(const unsigned long int ms, const unsigned long int unit);
 int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
 int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_vertex *shape);
 void generic_sleep_ms(int ms);
@@ -137,8 +137,8 @@ generic_abs_int(signed long long ipt) {
 }
 
 void 
-generic_delay(int ms) {
-	clock_t end=clock()+ms*(CLOCKS_PER_SEC / 1000);
+generic_delay(const unsigned long int ms, const unsigned long int unit) {
+	clock_t end=clock()+ms*(CLOCKS_PER_SEC / unit);
 	while (clock()<end) {}
 	return;
 }
@@ -222,10 +222,6 @@ int
 generic_drawLine_polar(int xi, int yi, int theta, int range, struct shape_vertex *shape) {
 	int endpt[2]={round(xi-range * (cos(theta))), round(yi -range * (sin(theta)))};
 	return generic_drawLine(xi, yi, endpt[0], endpt[1], shape);
-}
-
-void 
-generic_sleep_ms(int ms) {
 }
 
 struct arg *
