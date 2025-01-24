@@ -1,5 +1,3 @@
-#define _POSIX_C_SOURCE 199309L
-
 #include <curses.h> // This may not be as portable
 #include <errno.h> // This may not be as portable
 #include <math.h>
@@ -23,6 +21,15 @@
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
+
+#ifdef WIN32
+	#define SLEEP(ms); Sleep(ms);
+#elif _POSIX_C_SOURCE >= 199309L
+	#define SLEEP(ms); {struct timespec ts;ts.tv_sec = ms / 1000;ts.tv_nsec = (ms % 1000) * 1000000;nanosleep(&ts, NULL);}
+    #else
+	#define SLEEP(ms) usleep(ms * 1000);
+    #endif
+
 
 // #! Global
 const int g_tickPeriod=1.0/TARGET_TICK_RATE*1000000000;
@@ -100,6 +107,7 @@ struct arg {
 void generic_delay(int ms);
 int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
 int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_vertex *shape);
+void generic_sleep_ms(int ms);
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
@@ -115,7 +123,6 @@ int world_checkCollision(int wx, int wy, struct map *currentMap);
 void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
 enum State world_loop(struct arg *args);
-//void *world_loop(void *args);
 
 float
 generic_abs_float(float ipt) {
@@ -131,11 +138,19 @@ generic_abs_int(signed long long ipt) {
 
 void 
 generic_delay(int ms) {
-	long pause=ms * (CLOCKS_PER_SEC / 1000);
-	clock_t start=clock();
-	while ((clock() - start) < pause)
+	clock_t end=clock()+ms*(CLOCKS_PER_SEC / 1000);
+	while (clock()<end) {}
 	return;
 }
+
+// Orig
+//void 
+//generic_delay(int ms) {
+//	long pause=ms * (CLOCKS_PER_SEC / 1000);
+//	clock_t start=clock();
+//	while ((clock() - start) < pause)
+//	return;
+//}
 
 int
 generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
@@ -207,6 +222,10 @@ int
 generic_drawLine_polar(int xi, int yi, int theta, int range, struct shape_vertex *shape) {
 	int endpt[2]={round(xi-range * (cos(theta))), round(yi -range * (sin(theta)))};
 	return generic_drawLine(xi, yi, endpt[0], endpt[1], shape);
+}
+
+void 
+generic_sleep_ms(int ms) {
 }
 
 struct arg *
@@ -340,11 +359,20 @@ main_loopCalculation(void *args) {
 	
 		// TODO: UNTESTED. TEST THIS
 		timespec_get(cArgs->postTick, TIME_UTC);
-		struct timespec wait_ns;
-		wait_ns.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000L)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
+		struct timespec wait_ms;
+		wait_ms.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000L)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
 	
-		nanosleep(&wait_ns, NULL);
 	}	
+	return NULL;
+}
+
+void *
+main_loopDisplay(void *args) {
+	struct arg *cArgs=(struct arg *)args;
+
+	while (cArgs->isRunning) {
+	// TODO: stream input rather than singular input		
+	}
 	return NULL;
 }
 
