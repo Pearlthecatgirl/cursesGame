@@ -326,6 +326,7 @@ main_loopCalculation(void *args) {
 				break;
 			wrefresh(cArgs->window_array[2]);
 		}
+		timespec_get(cArgs->postTick, TIME_UTC);
 		while (clock()<end) {} // waste cpu cycles until the sepcified time
 	}	
 	return NULL;
@@ -336,7 +337,13 @@ main_loopDisplay(void *args) {
 	struct arg *cArgs=(struct arg *)args;
 
 	while (cArgs->isRunning) {
-	// TODO: stream input rather than singular input		
+		clock_t end=clock() + g_framePeriod_us/1000000*CLOCKS_PER_SEC;
+		cArgs->frame++;
+		timespec_get(cArgs->preFrame, TIME_UTC);
+		// TODO: stream input rather than singular input		
+
+		timespec_get(cArgs->postFrame, TIME_UTC);
+		while (clock()<end) {} // waste cpu cycles until the sepcified time
 	}
 	return NULL;
 }
