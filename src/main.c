@@ -22,18 +22,14 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-#ifdef WIN32
-	#define SLEEP(ms); Sleep(ms);
-#elif _POSIX_C_SOURCE >= 199309L
-	#define SLEEP(ms); {struct timespec ts;ts.tv_sec = ms / 1000;ts.tv_nsec = (ms % 1000) * 1000000;nanosleep(&ts, NULL);}
-    #else
-	#define SLEEP(ms) usleep(ms * 1000);
-    #endif
-
+#define NS_WAIT 1000000000
+#define US_WAIT 1000000
+#define MS_WAIT 1000
+#define S_WAIT 1
 
 // #! Global
-const int g_tickPeriod=1.0/TARGET_TICK_RATE*1000000000;
-const int g_framePeriod=1.0/TARGET_FRAME_RATE*1000000000;
+const float g_tickPeriod_us=1.0/TARGET_TICK_RATE*1000000;
+const float g_framePeriod_us=1.0/TARGET_FRAME_RATE*1000000;
 
 // #! Structs
 struct _Vector {
@@ -123,27 +119,12 @@ void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
 enum State world_loop(struct arg *args);
 
-signed long long 
-generic_abs_int(signed long long ipt) {
-	if (ipt>0) return ipt;
-	return ipt*=-1;
-}
-
 void 
-generic_delay(const unsigned long int ms, const unsigned long int unit) {
-	clock_t end=clock()+ms*(CLOCKS_PER_SEC / unit);
+generic_delay(const unsigned long int time, const unsigned long int unit) {
+	clock_t end=clock()+time*(CLOCKS_PER_SEC / unit);
 	while (clock()<end) {}
 	return;
 }
-
-// Orig
-//void 
-//generic_delay(int ms) {
-//	long pause=ms * (CLOCKS_PER_SEC / 1000);
-//	clock_t start=clock();
-//	while ((clock() - start) < pause)
-//	return;
-//}
 
 int
 generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
@@ -328,8 +309,8 @@ main_loop(struct arg *args) {
 void *
 main_loopCalculation(void *args) {
 	struct arg *cArgs=(struct arg *)args;
-
 	while (cArgs->isRunning) {
+		clock_t end=clock() + g_tickPeriod_us/1000000*CLOCKS_PER_SEC;
 		cArgs->tick++;
 		timespec_get(cArgs->preTick, TIME_UTC);
 		
@@ -345,12 +326,7 @@ main_loopCalculation(void *args) {
 				break;
 			wrefresh(cArgs->window_array[2]);
 		}
-	
-		// TODO: UNTESTED. TEST THIS
-		timespec_get(cArgs->postTick, TIME_UTC);
-		//struct timespec wait_ms;
-		//wait_ms.tv_nsec=g_tickPeriod-(((cArgs->postFrame->tv_sec-cArgs->preFrame->tv_sec)*1000000000L)+(cArgs->postFrame->tv_nsec-cArgs->preFrame->tv_nsec));
-	
+		while (clock()<end) {} // waste cpu cycles until the sepcified time
 	}	
 	return NULL;
 }
