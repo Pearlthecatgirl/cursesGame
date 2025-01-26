@@ -251,7 +251,16 @@ main_init(void) {
 // TODO: Deprecated. migrate n remove
 void
 main_loop(struct arg *args) {
+	pthread_t th_display, th_input, th_calc;
 
+	pthread_create(&th_calc, NULL, main_loopCalculation, (void *)args);
+	pthread_create(&th_display, NULL, main_loopDisplay, (void *)args);
+	pthread_create(&th_input, NULL, main_loopInput, (void *)args);
+	while (args->isRunning) {}
+
+	pthread_join(th_calc, NULL);
+	pthread_join(th_display, NULL);
+	pthread_join(th_input, NULL);
 
 }
 
