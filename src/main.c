@@ -15,6 +15,7 @@
 #define MAX_FILE_NAME_SIZE 16 // File name size
 #define TARGET_TICK_RATE 20 
 #define TARGET_FRAME_RATE 60
+#define TARGET_INPUT_RATE 240
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
 
@@ -30,6 +31,7 @@
 // #! Global
 const float g_tickPeriod_us=1.0/TARGET_TICK_RATE*1000000;
 const float g_framePeriod_us=1.0/TARGET_FRAME_RATE*1000000;
+const float g_inputPeriod_us=1.0/TARGET_INPUT_RATE*1000000;
 
 // #! Structs
 struct _Vector {
@@ -102,12 +104,14 @@ struct arg {
 // #!Functions
 void generic_delay(const unsigned long int ms, const unsigned long int unit);
 int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
-int generic_drawLine_polar(int x0, int y0, int theta, int range, struct shape_vertex *shape);
+int generic_drawLine_polar(const int xi, const int yi, const int theta, const int range, struct shape_vertex *shape);
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
+// TODO: add return code in the args for debug purposes
 void *main_loopCalculation(void *args);
 void *main_loopDisplay(void *args);
+void *main_loopInput(void *args);
 
 void util_displayShape(WINDOW *window, struct shape_vertex *shape, char material);
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
@@ -193,7 +197,7 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 
 /*This function returns the return code from the inner function. NOT A SHAPE ARRAY*/
 int
-generic_drawLine_polar(int xi, int yi, int theta, int range, struct shape_vertex *shape) {
+generic_drawLine_polar(const int xi, const int yi, const int theta, const int range, struct shape_vertex *shape) {
 	int endpt[2]={round(xi-range * (cos(theta))), round(yi -range * (sin(theta)))};
 	return generic_drawLine(xi, yi, endpt[0], endpt[1], shape);
 }
@@ -244,6 +248,7 @@ main_init(void) {
 	return opt;
 }
 
+// TODO: Deprecated. migrate n remove
 void
 main_loop(struct arg *args) {
 	timespec_get(args->preFrame, TIME_UTC);
@@ -309,8 +314,9 @@ main_loop(struct arg *args) {
 void *
 main_loopCalculation(void *args) {
 	struct arg *cArgs=(struct arg *)args;
+	clock_t wait=g_tickPeriod_us/US_WAIT*CLOCKS_PER_SEC;
 	while (cArgs->isRunning) {
-		clock_t end=clock() + g_tickPeriod_us/1000000*CLOCKS_PER_SEC;
+		clock_t end=clock() + wait;
 		cArgs->tick++;
 		timespec_get(cArgs->preTick, TIME_UTC);
 		
@@ -335,17 +341,36 @@ main_loopCalculation(void *args) {
 void *
 main_loopDisplay(void *args) {
 	struct arg *cArgs=(struct arg *)args;
-
+	clock_t wait=g_framePeriod_us/US_WAIT*CLOCKS_PER_SEC;
 	while (cArgs->isRunning) {
-		clock_t end=clock() + g_framePeriod_us/1000000*CLOCKS_PER_SEC;
+		clock_t end=clock() + wait;
 		cArgs->frame++;
 		timespec_get(cArgs->preFrame, TIME_UTC);
-		// TODO: stream input rather than singular input		
 
 		timespec_get(cArgs->postFrame, TIME_UTC);
 		while (clock()<end) {} // waste cpu cycles until the sepcified time
 	}
 	return NULL;
+}
+
+void *
+main_loopInput(void *args) {
+	struct arg *cArgs=(struct arg *)args;
+	clock_t wait=g_inputPeriod_us/US_WAIT*CLOCKS_PER_SEC;
+	while (cArgs->isRunning) {
+		clock_t end=clock() + wait;
+		cArgs->cKey=getch();
+		if (cArgs->cKey==KEY_MOUSE) {
+			MEVENT mouse_event;
+			if (getmouse(&mouse_event)==OK) {
+			cArgs->mY=mouse_event.y;
+			cArgs->mX=mouse_event.x;
+			}	
+		}
+		while (clock()<end) {}
+
+	}
+	return NULL;	
 }
 
 int
@@ -467,7 +492,9 @@ void
 util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	FILE *fptr;
 	char fullpath[256];
-	if (snprintf(fullpath, 256, "%s/%s", path, mapId)<0) CRASH(ENOBUFS);
+
+	// /path/to/data/dir/LEVEL/LEVEL1...LEVEL2... 
+	if (snprintf(fullpath, 256, "%s/LEVEL/%s", path, mapId)<0) CRASH(ENOBUFS);
 	if (!(access(fullpath, R_OK)==0)) CRASH(EACCES);
 	if (!(fptr=fopen(fullpath, "rb"))) CRASH(ENOMEM);
 	
