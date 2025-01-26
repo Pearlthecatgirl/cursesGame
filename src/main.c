@@ -251,64 +251,8 @@ main_init(void) {
 // TODO: Deprecated. migrate n remove
 void
 main_loop(struct arg *args) {
-	timespec_get(args->preFrame, TIME_UTC);
 
-	args->cKey=getch(); // Get keyboard Information
 
-	wclear(args->window_array[2]);
-	box(args->window_array[1], 0, 0);
-	wrefresh(args->window_array[1]);
-
-	// Check the box to see if the screen width changes at all
-	args->wOffset=args->hOffset=1;
-	if (mLINES%2) args->wOffset=2;
-	if (mCOLS%2) args->hOffset=2;
-
-	// Map the game cursor to the hardware cursor
-	if (args->cKey==KEY_MOUSE) {
-		MEVENT mouse_event;
-		if (getmouse(&mouse_event)==OK) {
-			args->mY=mouse_event.y;
-			args->mX=mouse_event.x;
-		}
-	}
-
-	// Move the cursor
-	switch (args->cKey) {
-		case KEY_UP:
-			if (!(args->mY-1<0))args->mY-=1;
-			break;
-		case KEY_DOWN:
-			if (!(args->mY+1>mLINES))args->mY+=1;
-			break;
-		case KEY_LEFT:
-			if (!(args->mY-1<0))args->mX-=1;
-			break;
-		case KEY_RIGHT:
-			if (!(args->mY-1>mCOLS))args->mX+=1;
-			break;
-		default:
-			break;
-	}
-	switch (args->gameState) {
-		case world:	
-			world_loop(args);
-			world_display(args);
-			mvwprintw(args->window_array[1], 0 ,0,"x:%d,y:%d, tick: %lld", args->p->self->ex, args->p->self->ey, args->tick);
-			break;
-		case inventory:
-			break;
-		case menu:
-			break;
-		default:
-			break;
-		wrefresh(args->window_array[2]);
-	}
-	
-	// Move the cursor
-	mvwprintw(args->window_array[0],args->mY, args->mX, "X");
-	wrefresh(args->window_array[0]);
-	timespec_get(args->postFrame, TIME_UTC);
 }
 
 void *
@@ -332,6 +276,7 @@ main_loopCalculation(void *args) {
 				break;
 			wrefresh(cArgs->window_array[2]);
 		}
+
 		timespec_get(cArgs->postTick, TIME_UTC);
 		while (clock()<end) {} // waste cpu cycles until the sepcified time
 	}	
@@ -346,6 +291,27 @@ main_loopDisplay(void *args) {
 		clock_t end=clock() + wait;
 		cArgs->frame++;
 		timespec_get(cArgs->preFrame, TIME_UTC);
+		cArgs->wOffset=cArgs->hOffset=1;
+		if (mLINES%2) cArgs->wOffset=2;
+		if (mCOLS%2) cArgs->hOffset=2;
+		
+		box(cArgs->window_array[1], 0, 0);
+		switch (cArgs->gameState) {
+			case world:	
+				wclear(cArgs->window_array[2]);
+				world_display(cArgs);
+				break;
+			case inventory:
+				break;
+			case menu:
+				break;
+			default:
+				break;
+			wrefresh(cArgs->window_array[2]);
+		}
+		wrefresh(cArgs->window_array[1]);
+		mvwprintw(cArgs->window_array[0],cArgs->mY, cArgs->mX, "X");
+		wrefresh(cArgs->window_array[0]);
 
 		timespec_get(cArgs->postFrame, TIME_UTC);
 		while (clock()<end) {} // waste cpu cycles until the sepcified time
@@ -368,7 +334,6 @@ main_loopInput(void *args) {
 			}	
 		}
 		while (clock()<end) {}
-
 	}
 	return NULL;	
 }
