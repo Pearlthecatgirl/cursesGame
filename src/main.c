@@ -29,9 +29,9 @@
 #define S_WAIT 1
 
 // #! Global
-const float g_tickPeriod_us=1.0/TARGET_TICK_RATE*1000000;
-const float g_framePeriod_us=1.0/TARGET_FRAME_RATE*1000000;
-const float g_inputPeriod_us=1.0/TARGET_INPUT_RATE*1000000;
+const float g_tickPeriod_ms=1000.0/TARGET_TICK_RATE;
+const float g_framePeriod_ms=1000.0/TARGET_FRAME_RATE;
+const float g_inputPeriod_ms=1000.0/TARGET_INPUT_RATE;
 
 // #! Structs
 struct _Vector {
@@ -105,6 +105,7 @@ struct arg {
 void generic_delay(const unsigned long int ms, const unsigned long int unit);
 int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
 int generic_drawLine_polar(const int xi, const int yi, const int theta, const int range, struct shape_vertex *shape);
+void generic_portableSleep(const int ms);
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
@@ -123,6 +124,7 @@ void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
 enum State world_loop(struct arg *args);
 
+// This is a bad function. Don't use this...
 void 
 generic_delay(const unsigned long int time, const unsigned long int unit) {
 	clock_t end=clock()+time*(CLOCKS_PER_SEC / unit);
@@ -202,6 +204,21 @@ generic_drawLine_polar(const int xi, const int yi, const int theta, const int ra
 	return generic_drawLine(xi, yi, endpt[0], endpt[1], shape);
 }
 
+void 
+generic_portableSleep(const int ms) {
+	#ifdef WIN32
+		Sleep(ms);
+	#elif _POSIX_C_SOURCE >= 199309L
+		struct timespec ts;
+		ts.tv_sec = milliseconds / 1000;
+		ts.tv_nsec = (milliseconds % 1000) * 1000000;
+		nanosleep(&ts, NULL);
+	#else
+		usleep(milliseconds * 1000);
+	#endif
+
+}
+
 struct arg *
 main_init(void) {
 	initscr();noecho();cbreak();clear();curs_set(0);keypad(stdscr, TRUE);
@@ -256,7 +273,7 @@ main_loop(struct arg *args) {
 	pthread_create(&th_calc, NULL, main_loopCalculation, (void *)args);
 	pthread_create(&th_display, NULL, main_loopDisplay, (void *)args);
 	pthread_create(&th_input, NULL, main_loopInput, (void *)args);
-	while (args->isRunning) {}
+//	while (args->isRunning) {}
 
 	pthread_join(th_calc, NULL);
 	pthread_join(th_display, NULL);
@@ -271,7 +288,7 @@ main_loopCalculation(void *args) {
 	while (cArgs->isRunning) {
 		clock_t end=clock() + wait;
 		cArgs->tick++;
-		timespec_get(cArgs->preTick, TIME_UTC);
+		//timespec_get(cArgs->preTick, TIME_UTC);
 		
 		switch (cArgs->gameState) {
 			case world:	
@@ -286,7 +303,7 @@ main_loopCalculation(void *args) {
 			wrefresh(cArgs->window_array[2]);
 		}
 
-		timespec_get(cArgs->postTick, TIME_UTC);
+		//timespec_get(cArgs->postTick, TIME_UTC);
 		while (clock()<end) {} // waste cpu cycles until the sepcified time
 	}	
 	return NULL;
@@ -299,7 +316,7 @@ main_loopDisplay(void *args) {
 	while (cArgs->isRunning) {
 		clock_t end=clock() + wait;
 		cArgs->frame++;
-		timespec_get(cArgs->preFrame, TIME_UTC);
+		//timespec_get(cArgs->preFrame, TIME_UTC);
 		cArgs->wOffset=cArgs->hOffset=1;
 		if (mLINES%2) cArgs->wOffset=2;
 		if (mCOLS%2) cArgs->hOffset=2;
@@ -322,7 +339,7 @@ main_loopDisplay(void *args) {
 		mvwprintw(cArgs->window_array[0],cArgs->mY, cArgs->mX, "X");
 		wrefresh(cArgs->window_array[0]);
 
-		timespec_get(cArgs->postFrame, TIME_UTC);
+		//timespec_get(cArgs->postFrame, TIME_UTC);
 		while (clock()<end) {} // waste cpu cycles until the sepcified time
 	}
 	return NULL;
