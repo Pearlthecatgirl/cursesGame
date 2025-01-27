@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 199309L
 #include <curses.h> // This may not be as portable
 #include <errno.h> // This may not be as portable
 #include <math.h>
@@ -29,9 +30,9 @@
 #define S_WAIT 1
 
 // #! Global
-const float g_tickPeriod_ms=1000.0/TARGET_TICK_RATE;
-const float g_framePeriod_ms=1000.0/TARGET_FRAME_RATE;
-const float g_inputPeriod_ms=1000.0/TARGET_INPUT_RATE;
+const float g_tickPeriod=1000.0/TARGET_TICK_RATE;
+const float g_framePeriod=1000.0/TARGET_FRAME_RATE;
+const float g_inputPeriod=1000.0/TARGET_INPUT_RATE;
 
 // #! Structs
 struct _Vector {
@@ -94,8 +95,8 @@ struct arg {
 	enum State {world, menu, inventory} gameState;
 
 	// Frame and tick time
-	struct timespec *preFrame, *postFrame;
-	struct timespec *preTick, *postTick;
+	clock_t preFrame, postFrame;
+	clock_t preTick, postTick;
 	
 	int cornerCoords[2 * 2 * 2];
 	int wOffset, hOffset;
@@ -210,13 +211,11 @@ generic_portableSleep(const int ms) {
 		Sleep(ms);
 	#elif _POSIX_C_SOURCE >= 199309L
 		struct timespec ts;
-		ts.tv_sec = milliseconds / 1000;
-		ts.tv_nsec = (milliseconds % 1000) * 1000000;
+		ts.tv_sec = ms / 1000;
+		ts.tv_nsec = (ms % 1000) * 1000000;
 		nanosleep(&ts, NULL);
-	#else
-		usleep(milliseconds * 1000);
 	#endif
-
+		//usleep(ms * 1000);
 }
 
 struct arg *
@@ -239,8 +238,6 @@ main_init(void) {
 
 	opt->currentMap=malloc(sizeof(map));
 	if (!opt->currentMap) CRASH(ENOMEM);
-	opt->preFrame=malloc(sizeof(struct timespec));
-	opt->postFrame=malloc(sizeof(struct timespec));
 	opt->isRunning=1;	
 
 	opt->window_array[0]=newwin(mLINES, mCOLS, 0, 0); // Root Window (always on)
@@ -284,9 +281,9 @@ main_loop(struct arg *args) {
 void *
 main_loopCalculation(void *args) {
 	struct arg *cArgs=(struct arg *)args;
-	clock_t wait=g_tickPeriod_us/US_WAIT*CLOCKS_PER_SEC;
+	clock_t preTick, postTick;
 	while (cArgs->isRunning) {
-		clock_t end=clock() + wait;
+		preTick=clock();
 		cArgs->tick++;
 		//timespec_get(cArgs->preTick, TIME_UTC);
 		
@@ -302,9 +299,9 @@ main_loopCalculation(void *args) {
 				break;
 			wrefresh(cArgs->window_array[2]);
 		}
-
-		//timespec_get(cArgs->postTick, TIME_UTC);
-		while (clock()<end) {} // waste cpu cycles until the sepcified time
+		postTick=clock();
+		int wait=g_framePeriod-(double)(postTick-preTick)*1000.0/CLOCKS_PER_SEC;
+		generic_portableSleep(wait);
 	}	
 	return NULL;
 }
@@ -312,9 +309,9 @@ main_loopCalculation(void *args) {
 void *
 main_loopDisplay(void *args) {
 	struct arg *cArgs=(struct arg *)args;
-	clock_t wait=g_framePeriod_us/US_WAIT*CLOCKS_PER_SEC;
+	clock_t preFrame, postFrame;
 	while (cArgs->isRunning) {
-		clock_t end=clock() + wait;
+		preFrame=clock();
 		cArgs->frame++;
 		//timespec_get(cArgs->preFrame, TIME_UTC);
 		cArgs->wOffset=cArgs->hOffset=1;
@@ -339,8 +336,9 @@ main_loopDisplay(void *args) {
 		mvwprintw(cArgs->window_array[0],cArgs->mY, cArgs->mX, "X");
 		wrefresh(cArgs->window_array[0]);
 
-		//timespec_get(cArgs->postFrame, TIME_UTC);
-		while (clock()<end) {} // waste cpu cycles until the sepcified time
+		postFrame=clock();
+		int wait=g_framePeriod-(double)(postFrame-preFrame)*1000.0/CLOCKS_PER_SEC;
+		generic_portableSleep(wait);
 	}
 	return NULL;
 }
@@ -348,9 +346,10 @@ main_loopDisplay(void *args) {
 void *
 main_loopInput(void *args) {
 	struct arg *cArgs=(struct arg *)args;
-	clock_t wait=g_inputPeriod_us/US_WAIT*CLOCKS_PER_SEC;
+	clock_t preInput, postInput;
 	while (cArgs->isRunning) {
-		clock_t end=clock() + wait;
+		preInput=clock();
+		postInput=clock();
 		cArgs->cKey=getch();
 		if (cArgs->cKey==KEY_MOUSE) {
 			MEVENT mouse_event;
@@ -359,7 +358,9 @@ main_loopInput(void *args) {
 			cArgs->mX=mouse_event.x;
 			}	
 		}
-		while (clock()<end) {}
+		postInput=clock();
+		int wait=g_framePeriod-(double)(postInput-preInput)*1000.0/CLOCKS_PER_SEC;
+		generic_portableSleep(wait);
 	}
 	return NULL;	
 }
@@ -425,7 +426,6 @@ world_display(struct arg *args) {
 	struct shape_vertex *cursorLine=malloc(sizeof(struct shape_vertex));
 	if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
 	for (int i=0;i<cursorLine->pointc;i++) {
-		mvprintw(i+1,mCOLS+3, "%d, %d", cursorLine->vertex[i]->coord[0], cursorLine->vertex[i]->coord[1]);
 	}
 	util_displayShape(args->window_array[2], cursorLine,'0');
 	//util_displayShape(args->window_array[2], generic_drawLine(midX, midY, args->mX, args->mY),'0');
