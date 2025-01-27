@@ -506,7 +506,7 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 
 	// /path/to/data/dir/LEVEL/LEVEL1...LEVEL2... 
 	if (snprintf(fullpath, 256, "%s/LEVEL/%s", path, mapId)<0) CRASH(ENOBUFS);
-	if (!(access(fullpath, R_OK)==0)) CRASH(EACCES);
+	if (access(fullpath, R_OK)!=0) CRASH(EACCES);
 	if (!(fptr=fopen(fullpath, "rb"))) CRASH(ENOMEM);
 	
 	//char *raw=malloc(sizeof(char)*(HEADER_SIZE+1));
@@ -520,7 +520,7 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 
 	char tmp_nameBuffer[MAX_NAME_SIZE];
 	if (!strncpy(currentMap->mapId, mapId, sizeof(char)*MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
-	if (!strcmp(currentMap->mapId, strtok(header, "|"))==0) fprintf(stderr, "Warning: map id doesn't seem correct...\n");
+	if (strcmp(currentMap->mapId, strtok(header, "|"))!=0) fprintf(stderr, "Warning: map id doesn't seem correct...\n");
 	if (!strncpy(tmp_nameBuffer, strtok(NULL, "|"), MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
 	currentMap->lines=atoi(strtok(NULL, "|"));
 	currentMap->cols=atoi(strtok(NULL, "|"));
