@@ -16,7 +16,7 @@
 #define MAX_FILE_NAME_SIZE 16 // File name size
 #define TARGET_TICK_RATE 20 
 #define TARGET_FRAME_RATE 60
-#define TARGET_INPUT_RATE 240
+#define TARGET_INPUT_RATE 90
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
 
@@ -143,7 +143,7 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	if (dx>dy) {
 		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
 		if (!shape->vertex) CRASH(ENOMEM);
-		fprintf(stderr, "dx num: %d, (%d)\n", dx, dx+1);
+		fprintf(stdout, "dx num: %d, (%d)\n", dx, dx+1);
 		shape->pointc=dx+1;
 		if (x0>x1) {
 			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
@@ -167,10 +167,10 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 			}
 			return 1;
 		}
-	} else {
+	} else if (dy>dx){
 		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
 		if (!shape->vertex) CRASH(ENOMEM);
-		fprintf(stderr, "dy num: %d, (%d)\n", dy, dy+1);
+		fprintf(stdout, "dy num: %d, (%d)\n", dy, dy+1);
 		shape->pointc=dy+1;
 		if (y0>y1) {
 		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
@@ -193,6 +193,27 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 				} p=p+2*dx;
 			}
 			return 1;
+		}
+	} else {
+		shape->vertex=malloc(sizeof(struct _Vector *)*dy);
+		if (!shape->vertex)	CRASH(ENOMEM);
+		fprintf(stdout, "dy num: %d, dx num: %d (should be equal)\n", dy, dx);
+		shape->pointc=dy;
+		if (y0>y1) {
+		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
+		}
+		int yc=y0;int p=2*dy-dx;
+		for (int i=0;i<dx;i++) {
+			shape->vertex[i]=malloc(sizeof(struct _Vector));
+			if (!shape->vertex[i]) CRASH(ENOMEM);
+			shape->vertex[i]->degree=2;
+			shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
+			if (!shape->vertex[i]->coord) CRASH(ENOMEM);
+			shape->vertex[i]->coord[0]=x0+i;
+			shape->vertex[i]->coord[1]=yc;
+			if (p>=0){
+				yc+=dir;p=p-2*dx;
+			} p=p+2*dy;
 		}
 	}
 	return 0;
@@ -310,15 +331,14 @@ void *
 main_loopDisplay(void *args) {
 	struct arg *cArgs=(struct arg *)args;
 	clock_t preFrame, postFrame;
+	box(cArgs->window_array[0], 0, 0);
 	while (cArgs->isRunning) {
 		preFrame=clock();
 		cArgs->frame++;
-		//timespec_get(cArgs->preFrame, TIME_UTC);
 		cArgs->wOffset=cArgs->hOffset=1;
 		if (mLINES%2) cArgs->wOffset=2;
 		if (mCOLS%2) cArgs->hOffset=2;
 		
-		box(cArgs->window_array[1], 0, 0);
 		switch (cArgs->gameState) {
 			case world:	
 				wclear(cArgs->window_array[2]);
@@ -332,9 +352,9 @@ main_loopDisplay(void *args) {
 				break;
 			wrefresh(cArgs->window_array[2]);
 		}
-		wrefresh(cArgs->window_array[1]);
 		mvwprintw(cArgs->window_array[0],cArgs->mY, cArgs->mX, "X");
 		wrefresh(cArgs->window_array[0]);
+		wrefresh(cArgs->window_array[1]);
 
 		postFrame=clock();
 		int wait=g_framePeriod-(double)(postFrame-preFrame)*1000.0/CLOCKS_PER_SEC;
