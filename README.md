@@ -23,5 +23,12 @@ Requires <curses.h> and <unistd.h>. The rest are c standard libraries. Just run 
 ```
 git clone https://github.com/Pearlthecatgirl/cursesGame.git
 cd cursesGame
-make release
+make RELEASE
 ```
+
+MAC OSX:
+OSX is a bit weird, run the seperate build command:
+```
+make RELEASE_MACOS
+```
+
