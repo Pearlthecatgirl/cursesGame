@@ -19,6 +19,9 @@ In terms of the engine, I would like to follow in the step of FLARE engine, anot
 
 Build:
 Requires <curses.h> and <unistd.h>. The rest are c standard libraries. Just run the Makefile for release:
+
 ```
+git clone https://github.com/Pearlthecatgirl/cursesGame.git
+cd cursesGame
 make release
 ```
