@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 199309L
+//#define _POSIX_C_SOURCE 199309L
 #include <curses.h> // This may not be as portable
 #include <errno.h> // This may not be as portable
 #include <math.h>
@@ -15,8 +15,8 @@
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
 #define TARGET_TICK_RATE 20 
-#define TARGET_FRAME_RATE 60
-#define TARGET_INPUT_RATE 90
+#define TARGET_FRAME_RATE 240
+#define TARGET_INPUT_RATE 240
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
 
@@ -88,15 +88,11 @@ struct arg {
 	short isRunning;
 	short iSMenu;
 	short autopause; // Pause during menu option
-	unsigned long long tick, frame;
+	unsigned long long tick, frame, input;
 	int cKey; // Keyboard input
 	int mX, mY; // Cursor coordinates
 
 	enum State {world, menu, inventory} gameState;
-
-	// Frame and tick time
-	clock_t preFrame, postFrame;
-	clock_t preTick, postTick;
 	
 	int cornerCoords[2 * 2 * 2];
 	int wOffset, hOffset;
@@ -143,6 +139,7 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	if (dx>dy) {
 		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
 		if (!shape->vertex) CRASH(ENOMEM);
+		// TODO: fix race condition with this popping up
 		fprintf(stdout, "dx num: %d, (%d)\n", dx, dx+1);
 		shape->pointc=dx+1;
 		if (x0>x1) {
@@ -266,6 +263,9 @@ main_init(void) {
 	opt->window_array[2]=subwin(opt->window_array[0], 0, 0, 0, 0); // World Display
 	opt->window_array[3]=subwin(opt->window_array[2], 0, 0, 0, 0); // World UI (world display)
 
+	opt->tick=0;
+	opt->frame=0;
+	opt->input=0;
 	opt->gameState=world;
 	opt->p->self->ey=5;
 	opt->p->self->ex=5;
@@ -306,8 +306,6 @@ main_loopCalculation(void *args) {
 	while (cArgs->isRunning) {
 		preTick=clock();
 		cArgs->tick++;
-		//timespec_get(cArgs->preTick, TIME_UTC);
-		
 		switch (cArgs->gameState) {
 			case world:	
 				world_loop(cArgs);
@@ -321,7 +319,7 @@ main_loopCalculation(void *args) {
 			wrefresh(cArgs->window_array[2]);
 		}
 		postTick=clock();
-		int wait=g_framePeriod-(double)(postTick-preTick)*1000.0/CLOCKS_PER_SEC;
+		int wait=g_tickPeriod-(double)(postTick-preTick)*1000.0/CLOCKS_PER_SEC;
 		generic_portableSleep(wait);
 	}	
 	return NULL;
@@ -353,6 +351,8 @@ main_loopDisplay(void *args) {
 			wrefresh(cArgs->window_array[2]);
 		}
 		mvwprintw(cArgs->window_array[0],cArgs->mY, cArgs->mX, "X");
+		mvwprintw(cArgs->window_array[0],mLINES, 0, 
+				"Frame: %lld, Input: %lld, Tick: %lld", cArgs->frame, cArgs->input, cArgs->tick);
 		wrefresh(cArgs->window_array[0]);
 		wrefresh(cArgs->window_array[1]);
 
@@ -369,7 +369,7 @@ main_loopInput(void *args) {
 	clock_t preInput, postInput;
 	while (cArgs->isRunning) {
 		preInput=clock();
-		postInput=clock();
+		cArgs->input++;
 		cArgs->cKey=getch();
 		if (cArgs->cKey==KEY_MOUSE) {
 			MEVENT mouse_event;
@@ -379,7 +379,7 @@ main_loopInput(void *args) {
 			}	
 		}
 		postInput=clock();
-		int wait=g_framePeriod-(double)(postInput-preInput)*1000.0/CLOCKS_PER_SEC;
+		int wait=g_inputPeriod-(double)(postInput-preInput)*1000.0/CLOCKS_PER_SEC;
 		generic_portableSleep(wait);
 	}
 	return NULL;	
@@ -571,3 +571,5 @@ return 0;
  *
  *
  * **/
+
+
