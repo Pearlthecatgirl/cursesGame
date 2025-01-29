@@ -100,6 +100,7 @@ struct arg {
 	
 	int cornerCoords[2 * 2 * 2];
 	int wOffset, hOffset;
+	pthread_mutex_t player_mutex;
 } args;
 
 // #!Functions
@@ -270,7 +271,8 @@ main_init(void) {
 	opt->p->self->ey=5;
 	opt->p->self->ex=5;
 
-	timeout(( (int) (1/((double)TARGET_TICK_RATE))*1000));
+	timeout(0);
+	pthread_mutex_init(&opt->player_mutex, NULL);
 	// Move loading map to here
 	// TODO: load data/map/player here later
 	
@@ -363,26 +365,46 @@ main_loopDisplay(void *args) {
 	return NULL;
 }
 
-void *
-main_loopInput(void *args) {
-	struct arg *cArgs=(struct arg *)args;
-	clock_t preInput, postInput;
-	while (cArgs->isRunning) {
-		preInput=clock();
-		postInput=clock();
-		cArgs->cKey=getch();
-		if (cArgs->cKey==KEY_MOUSE) {
-			MEVENT mouse_event;
-			if (getmouse(&mouse_event)==OK) {
-			cArgs->mY=mouse_event.y;
-			cArgs->mX=mouse_event.x;
-			}	
-		}
-		postInput=clock();
-		int wait=g_framePeriod-(double)(postInput-preInput)*1000.0/CLOCKS_PER_SEC;
-		generic_portableSleep(wait);
-	}
-	return NULL;	
+void *main_loopInput(void *args) {
+    struct arg *cArgs = (struct arg *)args;
+    clock_t preInput, postInput;
+    while (cArgs->isRunning) {
+        preInput = clock();
+        int key = getch();
+        if (key == KEY_MOUSE) {
+            MEVENT mouse_event;
+            if (getmouse(&mouse_event) == OK) {
+                cArgs->mY = mouse_event.y;
+                cArgs->mX = mouse_event.x;
+            }
+        } else {
+            int dx = 0, dy = 0;
+            switch (key) {
+                case 'w': dy = -1; break;
+                case 's': dy = 1; break;
+                case 'a': dx = -1; break;
+                case 'd': dx = 1; break;
+                case 'q': cArgs->isRunning = 0; break;
+            }
+            if (dx != 0 || dy != 0) {
+                pthread_mutex_lock(&cArgs->player_mutex);
+                int new_ex = cArgs->p->self->ex + dx;
+                int new_ey = cArgs->p->self->ey + dy;
+                // Check collision
+                if (!world_checkCollision(new_ex, new_ey, cArgs->currentMap)) {
+                    cArgs->p->self->ex = new_ex;
+                    cArgs->p->self->ey = new_ey;
+                }
+                pthread_mutex_unlock(&cArgs->player_mutex);
+            }
+        }
+        postInput = clock();
+        int wait = g_inputPeriod - (double)(postInput - preInput) * 1000.0 / CLOCKS_PER_SEC;
+        if (wait > 0) {
+            generic_portableSleep(wait);
+        }
+    }
+    return NULL;
 }
 
 int
@@ -419,7 +441,12 @@ world_defineCorners(int px, int py, int * output) {
 
 void
 world_display(struct arg *args) {
-	int edgeX=args->p->self->ex, edgeY=args->p->self->ey;
+    int edgeX, edgeY;
+    pthread_mutex_lock(&args->player_mutex);
+    edgeX = args->p->self->ex;
+    edgeY = args->p->self->ey;
+    pthread_mutex_unlock(&args->player_mutex);
+
 	int midX=(int)mLINES/2, midY=(int)mCOLS/2;
 
 	// Calculate whether to scroll, or move the player on screen. 
@@ -455,41 +482,10 @@ world_display(struct arg *args) {
 	wrefresh(args->window_array[1]);
 }
 
-//enum State 
 enum State
-world_loop(struct arg *args) {
-	switch (args->cKey) {
-		case'w':
-			if (!world_checkCollision(args->p->self->ex,args->p->self->ey-1,args->currentMap)) {
-				args->p->self->ey-=1;
-			}
-			break;
-		case's':
-			if (!world_checkCollision(args->p->self->ex,args->p->self->ey+1,args->currentMap)) {
-				args->p->self->ey+=1;
-			}
-			break;
-		case'a':
-			if (!world_checkCollision(args->p->self->ex-1, args->p->self->ey,args->currentMap)) {
-				args->p->self->ex-=1;
-			}
-			break;
-		case'd':
-			if (!world_checkCollision(args->p->self->ex+1, args->p->self->ey,args->currentMap)) {
-				args->p->self->ex+=1;
-			}
-			break;
-		case'e':
-			args->gameState=inventory;
-			break;
-		case'r':
-			args->p->self->ex=25;
-			args->p->self->ey=25;
-			break;
-		case'q':args->isRunning=0;
-	}
-	args->gameState=world;
-	return world;
+world_loop(struct arg *args) { 
+    (void)args;
+    return world; 
 }
 
 void
