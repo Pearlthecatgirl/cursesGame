@@ -134,6 +134,7 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	int dx=x1-x0;
 	int dy=y1-y0;
 	int dir=1;
+	int dir_x=1, dir_y=1;
 	if (dx<0) dx*=-1;
 	if (dy<0) dy*=-1;
 	if (dx>dy) {
@@ -196,19 +197,18 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 		if (!shape->vertex)	CRASH(ENOMEM);
 		fprintf(stdout, "dy num: %d, dx num: %d (should be equal)\n", dy, dx);
 		shape->pointc=dy;
+		int dir_x=1, dir_y=1;
+		mvprintw(mLINES+5, 0, "%d", dx);
 
-		int yc=y0;int p=2*dy-dx;
-		for (int i=0;i<dx;i++) {
+		for (int i=0;i<dy;i++) {
 			shape->vertex[i]=malloc(sizeof(struct _Vector));
 			if (!shape->vertex[i]) CRASH(ENOMEM);
 			shape->vertex[i]->degree=2;
 			shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
 			if (!shape->vertex[i]->coord) CRASH(ENOMEM);
-			shape->vertex[i]->coord[0]=x0+i+1;
-			shape->vertex[i]->coord[1]=y0+i+1;
-			//if (p>=0){
-			//	yc+=dir;p=p-2*dx;
-			//} p=p+2*dy;
+			shape->vertex[i]->coord[0]=x0+(i*dir_x);
+			shape->vertex[i]->coord[1]=y0+(i*dir_y);
+
 		}
 	}
 	return 0;
@@ -326,7 +326,6 @@ void *
 main_loopDisplay(void *args) {
 	struct arg *cArgs=(struct arg *)args;
 	clock_t preFrame, postFrame;
-	box(cArgs->window_array[0], 0, 0);
 	while (cArgs->isRunning) {
 		preFrame=clock();
 		cArgs->frame++;
@@ -348,8 +347,8 @@ main_loopDisplay(void *args) {
 			wrefresh(cArgs->window_array[2]);
 		}
 		mvwprintw(cArgs->window_array[0],cArgs->mY, cArgs->mX, "X");
-		mvwprintw(cArgs->window_array[0],mLINES, 0, 
-				"Frame: %lld, Input: %lld, Tick: %lld", cArgs->frame, cArgs->input, cArgs->tick);
+		mvwprintw(cArgs->window_array[0],mLINES, 0, "Frame: %lld, Input: %lld, Tick: %lld", cArgs->frame, cArgs->input, cArgs->tick);
+		box(cArgs->window_array[0], 0, 0);
 		wrefresh(cArgs->window_array[0]);
 		wrefresh(cArgs->window_array[1]);
 
@@ -441,7 +440,8 @@ world_display(struct arg *args) {
 	}
 	//mvwprintw(args->window_array[2], midY, midX, "@");
 	struct shape_vertex *cursorLine=malloc(sizeof(struct shape_vertex));
-	if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
+	//if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
+	if (!generic_drawLine(mCOLS/2, mLINES/2, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
 	for (int i=0;i<cursorLine->pointc;i++) {
 	}
 	util_displayShape(args->window_array[2], cursorLine,'0');
@@ -513,6 +513,7 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	if (!header) CRASH(ENOMEM);
 	if (!fread(header, sizeof(char)*(HEADER_SIZE), 1, fptr)) CRASH(0);
 
+	// TODO: make the obfuscation function
 	//strncpy(header, raw, sizeof(char)*(HEADER_SIZE+1));
 
 	char tmp_nameBuffer[MAX_NAME_SIZE];
@@ -533,8 +534,6 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	}
 
 	fclose(fptr);
-
-	//free(raw);
 	free(header);
 	return;
 }
