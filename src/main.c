@@ -14,7 +14,7 @@
 #define mLINES 17 //	Max Screen size
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
-#define TARGET_TICK_RATE 20 
+#define TARGET_TICK_RATE 240
 #define TARGET_FRAME_RATE 240
 #define TARGET_INPUT_RATE 240
 #define HEADER_SIZE 50 //Size of header in each read file
@@ -196,9 +196,7 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 		if (!shape->vertex)	CRASH(ENOMEM);
 		fprintf(stdout, "dy num: %d, dx num: %d (should be equal)\n", dy, dx);
 		shape->pointc=dy;
-		if (y0>y1) {
-		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
-		}
+
 		int yc=y0;int p=2*dy-dx;
 		for (int i=0;i<dx;i++) {
 			shape->vertex[i]=malloc(sizeof(struct _Vector));
@@ -206,11 +204,11 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 			shape->vertex[i]->degree=2;
 			shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
 			if (!shape->vertex[i]->coord) CRASH(ENOMEM);
-			shape->vertex[i]->coord[0]=x0+i;
-			shape->vertex[i]->coord[1]=yc;
-			if (p>=0){
-				yc+=dir;p=p-2*dx;
-			} p=p+2*dy;
+			shape->vertex[i]->coord[0]=x0+i+1;
+			shape->vertex[i]->coord[1]=y0+i+1;
+			//if (p>=0){
+			//	yc+=dir;p=p-2*dx;
+			//} p=p+2*dy;
 		}
 	}
 	return 0;
@@ -270,7 +268,6 @@ main_init(void) {
 	opt->p->self->ey=5;
 	opt->p->self->ex=5;
 
-	timeout(( (int) (1/((double)TARGET_TICK_RATE))*1000));
 	// Move loading map to here
 	// TODO: load data/map/player here later
 	
@@ -279,7 +276,7 @@ main_init(void) {
 	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION,NULL);
 	printf("\033[?1003h\n"); // Mouse caputre escape sequence
 
-	opt->tick=0;
+	timeout(( (int) (1/((double)TARGET_TICK_RATE))*1000));
 	return opt;
 }
 
@@ -562,6 +559,7 @@ main(int argc, char **argv) {
 
 	main_loop(args);
 
+	printf("\033[?1003l\n"); // Mouse caputre escape sequence
 	endwin();
 return 0;
 }
