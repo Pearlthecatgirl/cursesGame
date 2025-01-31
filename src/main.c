@@ -14,9 +14,9 @@
 #define mLINES 17 //	Max Screen size
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
-#define TARGET_TICK_RATE 240
-#define TARGET_FRAME_RATE 240
-#define TARGET_INPUT_RATE 240
+#define TARGET_TICK_RATE 60 
+#define TARGET_FRAME_RATE 60
+#define TARGET_INPUT_RATE 60
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
 
@@ -231,7 +231,6 @@ generic_portableSleep(const int ms) {
 		ts.tv_nsec = (ms % 1000) * 1000000;
 		nanosleep(&ts, NULL);
 	#endif
-		//usleep(ms * 1000);
 }
 
 struct arg *
