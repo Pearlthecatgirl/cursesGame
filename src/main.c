@@ -14,7 +14,7 @@
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
 #define TARGET_TICK_RATE 240 
-#define TARGET_FRAME_RATE 240
+#define TARGET_FRAME_RATE 120
 #define TARGET_INPUT_RATE 240
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
@@ -235,7 +235,7 @@ generic_portableSleep(const int ms) {
 
 struct arg *
 main_init(void) {
-	initscr();noecho();cbreak();clear();curs_set(0);keypad(stdscr, TRUE);
+	initscr();noecho();raw();clear();curs_set(0);keypad(stdscr, TRUE);
 	struct arg *opt=malloc(sizeof(struct arg));
 	if (!opt) CRASH(ENOMEM);
 	opt->p=malloc(sizeof(player));
@@ -316,6 +316,7 @@ main_loopCalculation(void *args) {
 		}
 		postTick=clock();
 		int wait=g_tickPeriod-(double)(postTick-preTick)*1000.0/CLOCKS_PER_SEC;
+		if (wait<0) wait=0;
 		generic_portableSleep(wait);
 	}	
 	return NULL;
@@ -328,10 +329,10 @@ main_loopDisplay(void *args) {
 	while (cArgs->isRunning) {
 		preFrame=clock();
 		cArgs->frame++;
+
 		cArgs->wOffset=cArgs->hOffset=1;
 		if (mLINES%2) cArgs->wOffset=2;
 		if (mCOLS%2) cArgs->hOffset=2;
-		
 		switch (cArgs->gameState) {
 			case world:	
 				wclear(cArgs->window_array[2]);
@@ -353,6 +354,7 @@ main_loopDisplay(void *args) {
 
 		postFrame=clock();
 		int wait=g_framePeriod-(double)(postFrame-preFrame)*1000.0/CLOCKS_PER_SEC;
+		if (wait<0) wait=0;
 		generic_portableSleep(wait);
 	}
 	return NULL;
@@ -375,6 +377,7 @@ main_loopInput(void *args) {
 		}
 		postInput=clock();
 		int wait=g_inputPeriod-(double)(postInput-preInput)*1000.0/CLOCKS_PER_SEC;
+		if (wait<0) wait=0;
 		generic_portableSleep(wait);
 	}
 	return NULL;	
