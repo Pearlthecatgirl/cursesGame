@@ -83,6 +83,10 @@ struct arg {
 	struct player* p;
 	struct map *currentMap;
 	WINDOW *window_array[5];
+	// TODO: make a new entity class?
+	struct entity **entity_array;
+	int entityc;
+	int entityc_a;
 
 	short isRunning;
 	short iSMenu;
@@ -259,6 +263,11 @@ main_init(void) {
 	opt->window_array[1]=subwin(opt->window_array[0], 0, 0, 0, 0); // main UI (always on)
 	opt->window_array[2]=subwin(opt->window_array[0], 0, 0, 0, 0); // World Display
 	opt->window_array[3]=subwin(opt->window_array[2], 0, 0, 0, 0); // World UI (world display)
+	
+	// TODO: placeholder entity count. Effected by difficulty and player count?
+	opt->entityc=5;
+	opt->entityc_a=0;
+	opt->entity_array=malloc(sizeof (struct entity*)*opt->entityc);
 
 	opt->tick=0;
 	opt->frame=0;
@@ -455,7 +464,13 @@ world_display(struct arg *args) {
 
 void 
 world_loopEnv(struct arg *args) {
-
+	for (int i=0;i<args->entityc;i++) {
+		// spawn if any in the array is NULL
+		if (args->entity_array[i]==NULL) {
+			// TODO: create entity n spawn	
+		}
+		// Direction
+	}
 }
 
 //enum State 
