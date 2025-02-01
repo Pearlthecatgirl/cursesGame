@@ -1,4 +1,3 @@
-//#define _POSIX_C_SOURCE 199309L
 #include <curses.h> // This may not be as portable
 #include <errno.h> // This may not be as portable
 #include <math.h>
@@ -14,9 +13,9 @@
 #define mLINES 17 //	Max Screen size
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
-#define TARGET_TICK_RATE 60 
-#define TARGET_FRAME_RATE 60
-#define TARGET_INPUT_RATE 60
+#define TARGET_TICK_RATE 240 
+#define TARGET_FRAME_RATE 240
+#define TARGET_INPUT_RATE 240
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
 
@@ -131,6 +130,7 @@ generic_delay(const unsigned long int time, const unsigned long int unit) {
 
 int
 generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
+	if (x0==x1 && y0==y1) return 0;
 	int dx=x1-x0;
 	int dy=y1-y0;
 	int dir=1;
@@ -437,14 +437,9 @@ world_display(struct arg *args) {
 			if (iwx==args->p->self->ex) midX=isx;
 		}
 	}
-	//mvwprintw(args->window_array[2], midY, midX, "@");
 	struct shape_vertex *cursorLine=malloc(sizeof(struct shape_vertex));
-	//if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
-	if (!generic_drawLine(mCOLS/2, mLINES/2, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
-	for (int i=0;i<cursorLine->pointc;i++) {
-	}
+	if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
 	util_displayShape(args->window_array[2], cursorLine,'0');
-	//util_displayShape(args->window_array[2], generic_drawLine(midX, midY, args->mX, args->mY),'0');
 	mvwaddch(args->window_array[2], midY, midX, '@');
 
 	wrefresh(args->window_array[2]);
