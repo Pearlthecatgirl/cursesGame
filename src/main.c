@@ -14,7 +14,7 @@
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
 #define TARGET_TICK_RATE 240 
-#define TARGET_FRAME_RATE 120
+#define TARGET_FRAME_RATE 240
 #define TARGET_INPUT_RATE 240
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
@@ -118,7 +118,8 @@ int util_cleanShape(struct shape_vertex *shape);
 int world_checkCollision(int wx, int wy, struct map *currentMap);
 void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
-enum State world_loop(struct arg *args);
+void world_loopEnv(struct arg *args); // Checks environment objects/mobs only
+enum State world_loopMain(struct arg *args); //player only
 
 // This is a bad function. Don't use this...
 void 
@@ -197,7 +198,6 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 		if (!shape->vertex)	CRASH(ENOMEM);
 		fprintf(stdout, "dy num: %d, dx num: %d (should be equal)\n", dy, dx);
 		shape->pointc=dy;
-		int dir_x=1, dir_y=1;
 		mvprintw(mLINES+5, 0, "%d", dx);
 
 		for (int i=0;i<dy;i++) {
@@ -302,9 +302,13 @@ main_loopCalculation(void *args) {
 	while (cArgs->isRunning) {
 		preTick=clock();
 		cArgs->tick++;
+		if (!cArgs->autopause) {
+			// Handle world events here if autopause is on, handle it in the world (paused while menu or inventory)
+			
+		}
 		switch (cArgs->gameState) {
 			case world:	
-				world_loop(cArgs);
+				world_loopMain(cArgs);
 				break;
 			case inventory:
 				break;
@@ -449,9 +453,14 @@ world_display(struct arg *args) {
 	wrefresh(args->window_array[1]);
 }
 
+void 
+world_loopEnv(struct arg *args) {
+
+}
+
 //enum State 
 enum State
-world_loop(struct arg *args) {
+world_loopMain(struct arg *args) {
 	switch (args->cKey) {
 		case'w':
 			if (!world_checkCollision(args->p->self->ex,args->p->self->ey-1,args->currentMap)) {
