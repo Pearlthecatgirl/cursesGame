@@ -250,6 +250,15 @@ generic_drawLine_polar(const int xi, const int yi, const int theta, const int ra
 	return generic_drawLine(xi, yi, endpt[0], endpt[1], shape);
 }
 
+void
+generic_freeShape(struct shape_vertex *shape) {
+	for (int i=0;i<shape->pointc;i++) {
+		free(shape->vertex[i]->coord);
+		shape->vertex[i]->degree=0;
+	}
+	shape->pointc=0;
+}
+
 void 
 generic_portableSleep(const int ms) {
 	#ifdef WIN32
@@ -414,6 +423,7 @@ main_loopInput(void *args) {
 			cArgs->mY=mouse_event.y;
 			cArgs->mX=mouse_event.x;
 			}	
+			// Create a line for player movement
 		}
 #endif
 		postInput=clock();
@@ -482,8 +492,8 @@ world_display(struct arg *args) {
 		}
 	}
 	struct shape_vertex *cursorLine=malloc(sizeof(struct shape_vertex));
-	//if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
 	if (!generic_drawLine(args->mX, args->mY, midX, midY, cursorLine)) {
+	generic_freeShape(cursorLine);
 #ifdef DEBUG
 		WARN("Some issue occured and shape was not drawn. ");
 #endif
