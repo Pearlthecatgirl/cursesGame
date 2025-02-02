@@ -18,17 +18,15 @@ In terms of the engine, I would like to follow in the step of FLARE engine, anot
 </body>
 
 Build:
-Requires <curses.h> and <unistd.h>. The rest are c standard libraries. Just run the Makefile for release:
+Requires <curses.h> and <unistd.h>. The rest are c standard libraries. Now Requires cmake as sort of a build system. 
 
 ```
 git clone https://github.com/Pearlthecatgirl/cursesGame.git
 cd cursesGame
-make RELEASE
-```
-
-MAC OSX:
-OSX is a bit weird, run the seperate build command:
-```
-make RELEASE_MACOS
+mkdir build
+cd build
+cmake ../
+make
+cp ../data ./
 ```
 
