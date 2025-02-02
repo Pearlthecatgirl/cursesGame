@@ -44,9 +44,19 @@ struct shape_vertex {
 	int pointc; // number of points
 };
 
+struct attr{};
+
+struct item{
+	struct attr **attrs_array; // Array of attributes
+	int attrc; // Number of Attributes
+};
+
 struct entity {
 	int ex, ey; // X and Y position
 	int r, t; // Range and Angle (theta) for direction facing and reach
+	short level;
+	long int health;
+	struct item **entity_inv; // Inventory of entities
 } entity;
 
 struct map {
@@ -61,6 +71,8 @@ struct player {
 	struct entity *self;
 	char saveId[MAX_FILE_NAME_SIZE];
 	char Name[20];
+	struct item **player_inv;
+	struct item **stash_inv;
 
 	// Onscreen location of the character
 	int screenx, screeny;
@@ -76,6 +88,8 @@ struct data {
 
 struct base {
 	struct data *dat;
+	char *data_path;
+	int data_path_len;
 } base;
 
 struct arg {
@@ -99,6 +113,11 @@ struct arg {
 	
 	int cornerCoords[2 * 2 * 2];
 	int wOffset, hOffset;
+	int use_mouse;
+	
+#ifdef NCURSES_MOUSE_VERSION
+	struct shape_vertex *mouse_pathfind;
+#endif
 } args;
 
 // #!Functions
@@ -114,6 +133,7 @@ void *main_loopCalculation(void *args);
 void *main_loopDisplay(void *args);
 void *main_loopInput(void *args);
 
+void util_spawnEntity(struct arg *args);
 void util_displayShape(WINDOW *window, struct shape_vertex *shape, char material);
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
 void *util_resizePointer(void *pointer, size_t new_size);
@@ -146,7 +166,9 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
 		if (!shape->vertex) CRASH(ENOMEM);
 		// TODO: fix race condition with this popping up
-		fprintf(stdout, "dx num: %d, (%d)\n", dx, dx+1);
+#ifdef DEBUG
+			fprintf(stdout, "dx num: %d, (%d)\n", dx, dx+1);
+#endif
 		shape->pointc=dx+1;
 		if (x0>x1) {
 			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
@@ -173,7 +195,9 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	} else if (dy>dx){
 		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
 		if (!shape->vertex) CRASH(ENOMEM);
+#ifdef DEBUG
 		fprintf(stdout, "dy num: %d, (%d)\n", dy, dy+1);
+#endif
 		shape->pointc=dy+1;
 		if (y0>y1) {
 		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
@@ -200,9 +224,10 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	} else {
 		shape->vertex=malloc(sizeof(struct _Vector *)*dy);
 		if (!shape->vertex)	CRASH(ENOMEM);
-		fprintf(stdout, "dy num: %d, dx num: %d (should be equal)\n", dy, dx);
+#ifdef DEBUG
+	   	fprintf(stdout, "dy num: %d, dx num: %d (should be equal)\n", dy, dx);
+#endif
 		shape->pointc=dy;
-		mvprintw(mLINES+5, 0, "%d", dx);
 
 		for (int i=0;i<dy;i++) {
 			shape->vertex[i]=malloc(sizeof(struct _Vector));
@@ -280,11 +305,15 @@ main_init(void) {
 	// TODO: load data/map/player here later
 	
 	// Initialize mouse input
+	opt->use_mouse=0;
+#ifdef NCURSES_MOUSE_VERSION
 	keypad(stdscr, TRUE);
 	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION,NULL);
 	printf("\033[?1003h\n"); // Mouse caputre escape sequence
+	opt->use_mouse=1;
+#endif
 
-	timeout(( (int) (1/((double)TARGET_TICK_RATE))*1000));
+	timeout(((int)(1/((double)TARGET_TICK_RATE))*1000));
 	return opt;
 }
 
@@ -292,11 +321,9 @@ main_init(void) {
 void
 main_loop(struct arg *args) {
 	pthread_t th_display, th_input, th_calc;
-
 	pthread_create(&th_calc, NULL, main_loopCalculation, (void *)args);
 	pthread_create(&th_display, NULL, main_loopDisplay, (void *)args);
 	pthread_create(&th_input, NULL, main_loopInput, (void *)args);
-//	while (args->isRunning) {}
 
 	pthread_join(th_calc, NULL);
 	pthread_join(th_display, NULL);
@@ -313,7 +340,6 @@ main_loopCalculation(void *args) {
 		cArgs->tick++;
 		if (!cArgs->autopause) {
 			// Handle world events here if autopause is on, handle it in the world (paused while menu or inventory)
-			
 		}
 		switch (cArgs->gameState) {
 			case world:	
@@ -381,6 +407,7 @@ main_loopInput(void *args) {
 		preInput=clock();
 		cArgs->input++;
 		cArgs->cKey=getch();
+#ifdef NCURSES_MOUSE_VERSION
 		if (cArgs->cKey==KEY_MOUSE) {
 			MEVENT mouse_event;
 			if (getmouse(&mouse_event)==OK) {
@@ -388,6 +415,7 @@ main_loopInput(void *args) {
 			cArgs->mX=mouse_event.x;
 			}	
 		}
+#endif
 		postInput=clock();
 		int wait=g_inputPeriod-(double)(postInput-preInput)*1000.0/CLOCKS_PER_SEC;
 		if (wait<0) wait=0;
@@ -454,7 +482,12 @@ world_display(struct arg *args) {
 		}
 	}
 	struct shape_vertex *cursorLine=malloc(sizeof(struct shape_vertex));
-	if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
+	//if (!generic_drawLine(midX, midY, args->mX, args->mY, cursorLine)) WARN("Some issue occured and shape was not drawn. ");
+	if (!generic_drawLine(args->mX, args->mY, midX, midY, cursorLine)) {
+#ifdef DEBUG
+		WARN("Some issue occured and shape was not drawn. ");
+#endif
+	}
 	util_displayShape(args->window_array[2], cursorLine,'0');
 	mvwaddch(args->window_array[2], midY, midX, '@');
 
@@ -470,6 +503,7 @@ world_loopEnv(struct arg *args) {
 			// TODO: create entity n spawn	
 		}
 		// Direction
+
 	}
 }
 
