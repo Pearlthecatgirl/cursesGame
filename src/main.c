@@ -44,7 +44,14 @@ struct shape_vertex {
 	int pointc; // number of points
 };
 
-struct attr{};
+struct attr{
+	char *name;
+	int namec; // length of name
+	char *code; // identifier
+	int _value_index; // Value given in scientific notation
+	double _value_specific; // Value given in scientific notation
+	enum type {INT, FLOAT} type_of_value;
+};
 
 struct item{
 	struct attr **attrs_array; // Array of attributes
@@ -155,6 +162,7 @@ generic_delay(const unsigned long int time, const unsigned long int unit) {
 	return;
 }
 
+// TODO: FIX THIS LINE DRAW ALGO
 int
 generic_line_draw(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	if (x0==x1 && y0==y1) return 0;
@@ -261,7 +269,6 @@ generic_line_scale(struct shape_vertex *line, signed int scalar) {
 		for (int i=1;i<line->pointc;i++) {
 			line->vertex[i]->coord[0]=line->vertex[0]->coord[0]-(line->vertex[i]->coord[0]-line->vertex[0]->coord[0]);
 			line->vertex[i]->coord[1]=line->vertex[1]->coord[1]-(line->vertex[i]->coord[1]-line->vertex[1]->coord[1]);
-		
 		}
 	}
 
@@ -524,8 +531,8 @@ world_display(struct arg *args) {
 		WARN("Some issue occured and shape was not drawn. ");
 #endif
 	}
+	generic_line_scale(cursorLine, 5); // Scaling test
 	util_displayShape(args->window_array[2], cursorLine,'0');
-	generic_line_scale(cursorLine, 5);
 	generic_freeShape(cursorLine);
 	mvwaddch(args->window_array[2], midY, midX, '@');
 
