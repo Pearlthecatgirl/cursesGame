@@ -57,6 +57,7 @@ struct entity {
 	short level;
 	long int health;
 	struct item **entity_inv; // Inventory of entities
+	int inv_itemc;
 } entity;
 
 struct map {
@@ -122,8 +123,9 @@ struct arg {
 
 // #!Functions
 void generic_delay(const unsigned long int ms, const unsigned long int unit);
-int generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
-int generic_drawLine_polar(const int xi, const int yi, const int theta, const int range, struct shape_vertex *shape);
+int generic_line_draw(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
+int generic_line_drawPolar(const int xi, const int yi, const int theta, const int range, struct shape_vertex *shape);
+int generic_line_scale(struct shape_vertex *line, signed int scalar);
 void generic_portableSleep(const int ms);
 
 struct arg *main_init(void);
@@ -154,7 +156,7 @@ generic_delay(const unsigned long int time, const unsigned long int unit) {
 }
 
 int
-generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
+generic_line_draw(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 	if (x0==x1 && y0==y1) return 0;
 	int dx=x1-x0;
 	int dy=y1-y0;
@@ -245,9 +247,34 @@ generic_drawLine(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
 
 /*This function returns the return code from the inner function. NOT A SHAPE ARRAY*/
 int
-generic_drawLine_polar(const int xi, const int yi, const int theta, const int range, struct shape_vertex *shape) {
+generic_line_drawPolar(const int xi, const int yi, const int theta, const int range, struct shape_vertex *shape) {
 	int endpt[2]={round(xi-range * (cos(theta))), round(yi -range * (sin(theta)))};
-	return generic_drawLine(xi, yi, endpt[0], endpt[1], shape);
+	return generic_line_draw(xi, yi, endpt[0], endpt[1], shape);
+}
+
+// 0 on fail, 1 on success
+int 
+generic_line_scale(struct shape_vertex *line, signed int scalar) {
+	if (scalar==0 || scalar==line->pointc) return scalar; // If its 0, do nothing. 	
+	// Negative Scaling
+	if (scalar<0) {
+		for (int i=1;i<line->pointc;i++) {
+			line->vertex[i]->coord[0]=line->vertex[0]->coord[0]-(line->vertex[i]->coord[0]-line->vertex[0]->coord[0]);
+			line->vertex[i]->coord[1]=line->vertex[1]->coord[1]-(line->vertex[i]->coord[1]-line->vertex[1]->coord[1]);
+		
+		}
+	}
+
+	// Scale down and scaling up
+	if (scalar<line->pointc) {
+		for (line->pointc;line->pointc>scalar;line->pointc--) {
+			free(line->vertex[line->pointc-1]);
+		}
+	} else {
+		
+	}
+
+	return 1;
 }
 
 void
@@ -326,7 +353,6 @@ main_init(void) {
 	return opt;
 }
 
-// TODO: Deprecated. migrate n remove
 void
 main_loop(struct arg *args) {
 	pthread_t th_display, th_input, th_calc;
@@ -420,10 +446,11 @@ main_loopInput(void *args) {
 		if (cArgs->cKey==KEY_MOUSE) {
 			MEVENT mouse_event;
 			if (getmouse(&mouse_event)==OK) {
-			cArgs->mY=mouse_event.y;
-			cArgs->mX=mouse_event.x;
-			}	
-			// Create a line for player movement
+				cArgs->mY=mouse_event.y;
+				cArgs->mX=mouse_event.x;
+				// TODO: Create a line for player movement
+				// Because this will always be 2d, don't have to free. 			
+			}
 		}
 #endif
 		postInput=clock();
@@ -492,13 +519,14 @@ world_display(struct arg *args) {
 		}
 	}
 	struct shape_vertex *cursorLine=malloc(sizeof(struct shape_vertex));
-	if (!generic_drawLine(args->mX, args->mY, midX, midY, cursorLine)) {
-	generic_freeShape(cursorLine);
+	if (!generic_line_draw(args->mX, args->mY, midX, midY, cursorLine)) {
 #ifdef DEBUG
 		WARN("Some issue occured and shape was not drawn. ");
 #endif
 	}
 	util_displayShape(args->window_array[2], cursorLine,'0');
+	generic_line_scale(cursorLine, 5);
+	generic_freeShape(cursorLine);
 	mvwaddch(args->window_array[2], midY, midX, '@');
 
 	wrefresh(args->window_array[2]);
