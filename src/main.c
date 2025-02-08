@@ -65,6 +65,7 @@ struct entity {
 	long int health;
 	struct item **entity_inv; // Inventory of entities
 	int inv_itemc;
+	enum entity_type; // Enemies, decor, etc
 } entity;
 
 struct map {
@@ -122,6 +123,7 @@ struct arg {
 	int cornerCoords[2 * 2 * 2];
 	int wOffset, hOffset;
 	int use_mouse;
+	char seed[16];
 	
 #ifdef NCURSES_MOUSE_VERSION
 	struct shape_vertex *mouse_pathfind;
@@ -129,6 +131,8 @@ struct arg {
 } args;
 
 // #!Functions
+short entity_spawn(struct entity *opt, struct base *self, int use_rand); // returns ret code
+
 void generic_delay(const unsigned long int ms, const unsigned long int unit);
 int generic_line_draw(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
 int generic_line_drawPolar(const int xi, const int yi, const int theta, const int range, struct shape_vertex *shape);
@@ -137,7 +141,6 @@ void generic_portableSleep(const int ms);
 
 struct arg *main_init(void);
 void main_loop(struct arg *args);
-// TODO: add return code in the args for debug purposes
 void *main_loopCalculation(void *args);
 void *main_loopDisplay(void *args);
 void *main_loopInput(void *args);
@@ -153,6 +156,14 @@ void world_defineCorners(int px, int py, int *output);
 void world_display(struct arg *args);
 void world_loopEnv(struct arg *args); // Checks environment objects/mobs only
 enum State world_loopMain(struct arg *args); //player only
+
+short
+entity_spawn(struct entity *opt, struct base *self, int use_rand) {
+	if (!use_rand) {
+				
+	}
+	
+}
 
 // This is a bad function. Don't use this...
 void 
@@ -260,7 +271,7 @@ generic_line_drawPolar(const int xi, const int yi, const int theta, const int ra
 	return generic_line_draw(xi, yi, endpt[0], endpt[1], shape);
 }
 
-// 0 on fail, 1 on success
+/* Return code: 0 on fail, 1 on success */
 int 
 generic_line_scale(struct shape_vertex *line, signed int scalar) {
 	if (scalar==0 || scalar==line->pointc) return scalar; // If its 0, do nothing. 	
@@ -278,7 +289,8 @@ generic_line_scale(struct shape_vertex *line, signed int scalar) {
 			free(line->vertex[line->pointc-1]);
 		}
 	} else {
-		
+	//TODO: upscaling
+
 	}
 
 	return 1;
