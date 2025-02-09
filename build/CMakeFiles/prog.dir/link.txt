@@ -1,1 +1,0 @@
-/usr/bin/cc -Wl,--dependency-file=CMakeFiles/prog.dir/link.d CMakeFiles/prog.dir/src/sp/main.c.o -o prog  -lcurses -lpthread -lm
