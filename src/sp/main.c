@@ -8,25 +8,8 @@
 #include <time.h>
 #include <unistd.h> // This may not be as portable
 
-#define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();printf("\033[?1003l\n");exit(errnum);}
-#define WARN(msg) {fprintf(stderr, "Warning: %s Might crash soon... (line: %d)\n", msg, __LINE__);}
-#define mLINES 17 //	Max Screen size
-#define mCOLS 39 // Max screen size
-#define MAX_FILE_NAME_SIZE 16 // File name size
-#define TARGET_TICK_RATE 240 
-#define TARGET_FRAME_RATE 240
-#define TARGET_INPUT_RATE 240
-#define HEADER_SIZE 50 //Size of header in each read file
-#define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
-
-#ifndef M_PI
-    #define M_PI 3.14159265358979323846
-#endif
-
-#define NS_WAIT 1000000000
-#define US_WAIT 1000000
-#define MS_WAIT 1000
-#define S_WAIT 1
+#include "../common/map.h"
+#include "../common/definitions.h"
 
 // #! Global
 const float g_tickPeriod=1000.0/TARGET_TICK_RATE;
@@ -73,16 +56,9 @@ struct entity {
 		furniture_static, furniture_nonStatic,
 		passive_static, passive_nonStatic, 
 		aggresive_static, aggresive_nonStatic,
-	}; // Enemies, decor, etc
+	} entity_type; // Enemies, decor, etc
 } entity;
 
-struct map {
-	char *mapName;
-	char mapId[MAX_FILE_NAME_SIZE];
-	short *mapArr;
-	int cols, lines;
-	int size;
-} map;
 
 struct player {
 	struct entity *self;

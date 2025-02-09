@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/data_editor.dir/link.d CMakeFiles/data_editor.dir/src/sp/main.c.o -o data_editor  -lcurses -lpthread -lm
