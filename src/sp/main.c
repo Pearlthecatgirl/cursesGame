@@ -143,6 +143,7 @@ entity_spawn(struct entity *opt, struct arg *args, int use_rand) {
 	if (!use_rand) {
 		USE_RAND:
 	} else {
+
 	}
 }
 
@@ -154,96 +155,125 @@ generic_delay(const unsigned long int time, const unsigned long int unit) {
 	return;
 }
 
-// TODO: FIX THIS LINE DRAW ALGO
 int
-generic_line_draw(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
-	if (x0==x1 && y0==y1) return 0;
-	int dx=x1-x0;
-	int dy=y1-y0;
-	int dir=1;
-	int dir_x=1, dir_y=1;
-	if (dx<0) dx*=-1;
-	if (dy<0) dy*=-1;
-	if (dx>dy) {
+generic_line_draw(int x0, int y0, int xf, int yf, struct shape_vertex *shape) {
+	int dx=xf-x0, dy=yf-y0;
+	if (abs(dy)<abs(dx)) {
+		int yp=1, rev=0;
+		if (x0>xf) {int tmp=x0;x0=xf;xf=tmp;tmp=y0;y0=yf;yf=tmp;rev=1;dy=yf-y0;dx=xf-x0;}
+		if (dy<0) {yp=-1;dy*=-1;}
 		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
-		if (!shape->vertex) CRASH(ENOMEM);
-		// TODO: fix race condition with this popping up
-#ifdef DEBUG
-			fprintf(stdout, "dx num: %d, (%d)\n", dx, dx+1);
-#endif
-		shape->pointc=dx+1;
-		if (x0>x1) {
-			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
-			}
-		int dx=x1-x0;int dy=y1-y0;
-		if (dy<1) dir=-1; 
-		dy*=dir;
-		if (dx!=0) {
-			int yc=y0;int p=2*dy-dx;
-			for (int i=0;i<dx+1;i++) {
-				shape->vertex[i]=malloc(sizeof(struct _Vector));
-				if (!shape->vertex[i]) CRASH(ENOMEM);
-				shape->vertex[i]->degree=2;
-				shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
-				if (!shape->vertex[i]->coord) CRASH(ENOMEM);
-				shape->vertex[i]->coord[0]=x0+i;
-				shape->vertex[i]->coord[1]=yc;
-				if (p>=0){
-					yc+=dir;p=p-2*dx;
-				} p=p+2*dy;
-			}
-			return 1;
-		}
-	} else if (dy>dx){
-		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
-		if (!shape->vertex) CRASH(ENOMEM);
-#ifdef DEBUG
-		fprintf(stdout, "dy num: %d, (%d)\n", dy, dy+1);
-#endif
-		shape->pointc=dy+1;
-		if (y0>y1) {
-		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
-		}
-		int dx=x1-x0;int dy=y1-y0;
-		if (dx<1) dir=-1; 
-		dx*=dir;
-		if (dy!=0) {
-			int xc=x0;int p=2*dx-dy;
-			for (int i=0;i<dy+1;i++) {
-				shape->vertex[i]=malloc(sizeof(struct _Vector));
-				if (!shape->vertex[i]) CRASH(ENOMEM);
-				shape->vertex[i]->degree=2;
-				shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
-				if (!shape->vertex[i]->coord) CRASH(ENOMEM);
-				shape->vertex[i]->coord[0]=xc;
-				shape->vertex[i]->coord[1]=y0+i;
-				if (p>=0){
-					xc+=dir;p=p-2*dy;
-				} p=p+2*dx;
-			}
-			return 1;
+		for (int xc=x0,yc=y0,dec=(2*dy)-dx;xc<xf;xc++) {
+			mvprintw(yc,xc,"0");
+			if (dec>0) {
+				dec+=2*(dy-dx);
+				yc+=yp;
+			} else dec+=2*dy;
 		}
 	} else {
-		shape->vertex=malloc(sizeof(struct _Vector *)*dy);
-		if (!shape->vertex)	CRASH(ENOMEM);
-#ifdef DEBUG
-	   	fprintf(stdout, "dy num: %d, dx num: %d (should be equal)\n", dy, dx);
-#endif
-		shape->pointc=dy;
-
-		for (int i=0;i<dy;i++) {
-			shape->vertex[i]=malloc(sizeof(struct _Vector));
-			if (!shape->vertex[i]) CRASH(ENOMEM);
-			shape->vertex[i]->degree=2;
-			shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
-			if (!shape->vertex[i]->coord) CRASH(ENOMEM);
-			shape->vertex[i]->coord[0]=x0+(i*dir_x);
-			shape->vertex[i]->coord[1]=y0+(i*dir_y);
-
+		int xp=1, rev=0;
+		if (y0>yf) {int tmp=x0;x0=xf;xf=tmp;tmp=y0;y0=yf;yf=tmp;rev=1;dy=yf-y0;dx=xf-x0;}
+		if (dx<0) {xp=-1;dx*=-1;}
+		for (int yc=y0,xc=x0,dec=(2*dx)-dy;yc<yf;yc++) {
+			mvprintw(yc,xc,"0");
+			if (dec>0) {
+				dec+=2*(dx-dy);
+				xc+=xp;
+			} else dec+=2*dx;
 		}
 	}
-	return 0;
 }
+
+// TODO: FIX THIS LINE DRAW ALGO
+//int
+//generic_line_draw(int x0, int y0, int x1, int y1, struct shape_vertex *shape) {
+//	if (x0==x1 && y0==y1) return 0;
+//	int dx=x1-x0;
+//	int dy=y1-y0;
+//	int dir=1;
+//	int dir_x=1, dir_y=1;
+//	if (dx<0) dx*=-1;
+//	if (dy<0) dy*=-1;
+//	if (dx>dy) {
+//		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
+//		if (!shape->vertex) CRASH(ENOMEM);
+//		// TODO: fix race condition with this popping up
+//#ifdef DEBUG
+//			fprintf(stdout, "dx num: %d, (%d)\n", dx, dx+1);
+//#endif
+//		shape->pointc=dx+1;
+//		if (x0>x1) {
+//			int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
+//			}
+//		int dx=x1-x0;int dy=y1-y0;
+//		if (dy<1) dir=-1; 
+//		dy*=dir;
+//		if (dx!=0) {
+//			int yc=y0;int p=2*dy-dx;
+//			for (int i=0;i<dx+1;i++) {
+//				shape->vertex[i]=malloc(sizeof(struct _Vector));
+//				if (!shape->vertex[i]) CRASH(ENOMEM);
+//				shape->vertex[i]->degree=2;
+//				shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
+//				if (!shape->vertex[i]->coord) CRASH(ENOMEM);
+//				shape->vertex[i]->coord[0]=x0+i;
+//				shape->vertex[i]->coord[1]=yc;
+//				if (p>=0){
+//					yc+=dir;p=p-2*dx;
+//				} p=p+2*dy;
+//			}
+//			return 1;
+//		}
+//	} else if (dy>dx){
+//		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
+//		if (!shape->vertex) CRASH(ENOMEM);
+//#ifdef DEBUG
+//		fprintf(stdout, "dy num: %d, (%d)\n", dy, dy+1);
+//#endif
+//		shape->pointc=dy+1;
+//		if (y0>y1) {
+//		int tmp=x0;x0=x1;x1=tmp;tmp=y0;y0=y1;y1=tmp;
+//		}
+//		int dx=x1-x0;int dy=y1-y0;
+//		if (dx<1) dir=-1; 
+//		dx*=dir;
+//		if (dy!=0) {
+//			int xc=x0;int p=2*dx-dy;
+//			for (int i=0;i<dy+1;i++) {
+//				shape->vertex[i]=malloc(sizeof(struct _Vector));
+//				if (!shape->vertex[i]) CRASH(ENOMEM);
+//				shape->vertex[i]->degree=2;
+//				shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
+//				if (!shape->vertex[i]->coord) CRASH(ENOMEM);
+//				shape->vertex[i]->coord[0]=xc;
+//				shape->vertex[i]->coord[1]=y0+i;
+//				if (p>=0){
+//					xc+=dir;p=p-2*dy;
+//				} p=p+2*dx;
+//			}
+//			return 1;
+//		}
+//	} else {
+//		shape->vertex=malloc(sizeof(struct _Vector *)*dy);
+//		if (!shape->vertex)	CRASH(ENOMEM);
+//#ifdef DEBUG
+//	   	fprintf(stdout, "dy num: %d, dx num: %d (should be equal)\n", dy, dx);
+//#endif
+//		shape->pointc=dy;
+//
+//		for (int i=0;i<dy;i++) {
+//			shape->vertex[i]=malloc(sizeof(struct _Vector));
+//			if (!shape->vertex[i]) CRASH(ENOMEM);
+//			shape->vertex[i]->degree=2;
+//			shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
+//			if (!shape->vertex[i]->coord) CRASH(ENOMEM);
+//			shape->vertex[i]->coord[0]=x0+(i*dir_x);
+//			shape->vertex[i]->coord[1]=y0+(i*dir_y);
+//
+//		}
+//	}
+//	return 0;
+//}
 
 /*This function returns the return code from the inner function. NOT A SHAPE ARRAY*/
 int
