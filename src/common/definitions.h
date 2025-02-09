@@ -1,7 +1,13 @@
 #pragma once
+
+#include <curses.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();printf("\033[?1003l\n");exit(errnum);}
 #define WARN(msg) {fprintf(stderr, "Warning: %s Might crash soon... (line: %d)\n", msg, __LINE__);}
-#define mLINES 17 //	Max Screen size
+#define mLINES 17 // Max Screen size
 #define mCOLS 39 // Max screen size
 #define MAX_FILE_NAME_SIZE 16 // File name size
 #define TARGET_TICK_RATE 240 

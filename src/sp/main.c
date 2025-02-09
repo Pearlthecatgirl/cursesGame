@@ -59,7 +59,6 @@ struct entity {
 	} entity_type; // Enemies, decor, etc
 } entity;
 
-
 struct player {
 	struct entity *self;
 	char saveId[MAX_FILE_NAME_SIZE];
@@ -115,7 +114,7 @@ struct arg {
 } args;
 
 // #!Functions
-short entity_spawn(struct entity *opt, struct base *self, int use_rand); // returns ret code
+//short entity_spawn(struct entity *opt, struct base *self, int use_rand); // returns ret code
 
 void generic_delay(const unsigned long int ms, const unsigned long int unit);
 int generic_line_draw(int x0, int y0, int x1, int y1, struct shape_vertex *shape);
@@ -131,8 +130,6 @@ void *main_loopInput(void *args);
 
 void util_spawnEntity(struct arg *args);
 void util_displayShape(WINDOW *window, struct shape_vertex *shape, char material);
-void util_loadMap(char *path, char *mapId, struct map *currentMap);
-void *util_resizePointer(void *pointer, size_t new_size);
 int util_cleanShape(struct shape_vertex *shape);
 
 int world_checkCollision(int wx, int wy, struct map *currentMap);
@@ -145,11 +142,8 @@ short
 entity_spawn(struct entity *opt, struct arg *args, int use_rand) {
 	if (!use_rand) {
 		USE_RAND:
-				
 	} else {
-				
 	}
-	
 }
 
 // This is a bad function. Don't use this...
@@ -322,7 +316,7 @@ main_init(void) {
 	if (!opt->self->dat->tileset) CRASH(ENOMEM);
 	if (!strncpy(opt->self->dat->tileset, ".#><", 7)) CRASH(ENOMEM);
 
-	opt->currentMap=malloc(sizeof(map));
+	opt->currentMap=malloc(sizeof(struct map));
 	if (!opt->currentMap) CRASH(ENOMEM);
 	opt->isRunning=1;	
 
@@ -594,48 +588,6 @@ util_displayShape(WINDOW *window, struct shape_vertex *shape, char material) {
 	for (int i=0;i<shape->pointc;i++) {
 		mvwprintw(window, shape->vertex[i]->coord[1], shape->vertex[i]->coord[0], "%c", material);
 	}
-}
-
-void 
-util_loadMap(char *path, char *mapId, struct map *currentMap) {
-	FILE *fptr;
-	char fullpath[256];
-
-	// /path/to/data/dir/LEVEL/LEVEL1...LEVEL2... 
-	if (snprintf(fullpath, 256, "%s/LEVEL/%s", path, mapId)<0) CRASH(ENOBUFS);
-	if (access(fullpath, R_OK)!=0) CRASH(EACCES);
-	if (!(fptr=fopen(fullpath, "rb"))) CRASH(ENOMEM);
-	
-	//char *raw=malloc(sizeof(char)*(HEADER_SIZE+1));
-	//if (!raw) CRASH(ENOMEM);
-	//if (!fread(raw, sizeof(char)*(HEADER_SIZE+1), 1, fptr)) CRASH(0);
-	char *header=malloc(sizeof(char)*(HEADER_SIZE+1));
-	if (!header) CRASH(ENOMEM);
-	if (!fread(header, sizeof(char)*(HEADER_SIZE), 1, fptr)) CRASH(0);
-
-	// TODO: make the obfuscation function
-	//strncpy(header, raw, sizeof(char)*(HEADER_SIZE+1));
-
-	char tmp_nameBuffer[MAX_NAME_SIZE];
-	if (!strncpy(currentMap->mapId, mapId, sizeof(char)*MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
-	if (strcmp(currentMap->mapId, strtok(header, "|"))!=0) fprintf(stderr, "Warning: map id doesn't seem correct...\n");
-	if (!strncpy(tmp_nameBuffer, strtok(NULL, "|"), MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
-	currentMap->lines=atoi(strtok(NULL, "|"));
-	currentMap->cols=atoi(strtok(NULL, "|"));
-	currentMap->size=atoi(strtok(NULL, "|"));
-
-	currentMap->mapName=malloc(sizeof(char)*strlen(tmp_nameBuffer));
-	if (!currentMap->mapName) CRASH(ENOMEM);
-	if (!strncpy(currentMap->mapName, tmp_nameBuffer, sizeof(char)*strlen(tmp_nameBuffer))) CRASH(ENOMEM);
-	
-	if (!(currentMap->mapArr=malloc(sizeof(short)*currentMap->lines*currentMap->cols))) CRASH(ENOMEM);
-	for (int i=0;i<currentMap->lines;i++) {
-		if (!fread(currentMap->mapArr+(i*50), sizeof(short)*currentMap->cols, 1, fptr)) CRASH(ENOMEM);
-	}
-
-	fclose(fptr);
-	free(header);
-	return;
 }
 
 void *
