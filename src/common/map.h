@@ -11,7 +11,7 @@ struct map {
 	short *mapArr;
 	int cols, lines;
 	int size;
-} map;
+};
 
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
 
