@@ -554,10 +554,12 @@ world_loopMain(struct arg *args) {
 		case'e':
 			args->gameState=inventory;
 			break;
+#ifdef DEBUG
 		case'r':
 			args->p->self->ex=25;
 			args->p->self->ey=25;
 			break;
+#endif
 		case'q':args->isRunning=0;
 	}
 	args->gameState=world;
