@@ -14,4 +14,9 @@ struct map {
 };
 
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
+void util_loadMap_txt(char *path, char *mapId, struct map*currentMap);
+void util_loadMap_legacy(char *path, char *mapId, struct map *currentMap);
+void util_loadMap_txt_legacy(char *path, char *mapId, struct map *currentMap);
+
+
 

@@ -17,13 +17,13 @@ const float g_framePeriod=1000.0/TARGET_FRAME_RATE;
 const float g_inputPeriod=1000.0/TARGET_INPUT_RATE;
 
 // #! Structs
-struct _Vector {
+struct vector {
 	int *coord; // coorindate
 	int degree; // number of coordinates
 };
 
 struct shape_vertex {
-	struct _Vector **vertex; // each coordinate of each point
+	struct vector **vertex; // each coordinate of each point
 	int pointc; // number of points
 };
 
@@ -161,39 +161,75 @@ generic_line_draw(int x0, int y0, int xf, int yf, struct shape_vertex *shape) {
 	int dx=xf-x0, dy=yf-y0;
 	if (abs(dy)<abs(dx)) {
 		int yp=1, rev=0;
-		if (x0>xf) {int tmp=x0;x0=xf;xf=tmp;tmp=y0;y0=yf;yf=tmp;rev=1;dy=yf-y0;dx=xf-x0;}
+		struct shape_vertex *tmp_shape;
+		if (x0>xf) {
+			// Is the line reversed? if so reverse everything
+			int tmp=x0;x0=xf;xf=tmp;tmp=y0;y0=yf;yf=tmp;rev=1;dy=yf-y0;dx=xf-x0;
+		}
 		if (dy<0) {yp=-1;dy*=-1;}
-		shape->vertex=malloc(sizeof(struct _Vector *)*(dx+1));
+		shape->pointc=(xf-x0);
+		shape->vertex=malloc(sizeof(struct vector *)*shape->pointc);
+		if (!shape->vertex) CRASH(ENOMEM);
+		
 		for (int xc=x0,yc=y0,dec=(2*dy)-dx,i=0;xc<xf;xc++,i++) {
+			// Allocation for line shape
+			shape->vertex[i]=malloc(sizeof(struct vector));
+			if (!shape->vertex[i]) CRASH(ENOMEM);
 			shape->vertex[i]->degree=2;
 			shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
-			if (!shape->vertex[i]->coord) CRASH(ENOMEM);
-			shape->vertex[i]->coord[0]=x0+i;
+			shape->vertex[i]->coord[0]=xc;
 			shape->vertex[i]->coord[1]=yc;
-
-			mvprintw(yc,xc,"0");
+			// Line drawing decision 
 			if (dec>0) {
 				dec+=2*(dy-dx);
 				yc+=yp;
 			} else dec+=2*dy;
+		} if (!rev) {
+			// if the line is reversed, reverse it back
+			struct vector *tmp_vector;
+			int l=0, r=shape->pointc-1;
+			while (l<r) {
+				tmp_vector=shape->vertex[l];
+				shape->vertex[l]=shape->vertex[r];
+				shape->vertex[r]=tmp_vector;
+				l++;r--;
+			}
 		} return 1;
 	} else {
 		int xp=1, rev=0;
-		if (y0>yf) {int tmp=x0;x0=xf;xf=tmp;tmp=y0;y0=yf;yf=tmp;rev=1;dy=yf-y0;dx=xf-x0;}
+		struct shape_vertex *tmp_shape;
+		if (y0>yf) {
+			// Same deal as above. Flip everything and store the reverse
+			int tmp=x0;x0=xf;xf=tmp;tmp=y0;y0=yf;yf=tmp;rev=1;dy=yf-y0;dx=xf-x0;
+		}
 		if (dx<0) {xp=-1;dx*=-1;}
-		shape->vertex=malloc(sizeof(struct _Vector *)*(dy+1));
+		shape->pointc=(yf-y0);
+		shape->vertex=malloc(sizeof(struct vector *)*shape->pointc);
+		if (!shape->vertex) CRASH(ENOMEM);
 		for (int yc=y0,xc=x0,dec=(2*dx)-dy,i=0;yc<yf;yc++, i++) {
+			// Allocation for line shape
+			shape->vertex[i]=malloc(sizeof(struct vector));
+			if (!shape->vertex[i]) CRASH(ENOMEM);
 			shape->vertex[i]->degree=2;
 			shape->vertex[i]->coord=malloc(sizeof(int)*shape->vertex[i]->degree);
-			if (!shape->vertex[i]->coord) CRASH(ENOMEM);
-			shape->vertex[i]->coord[0]=x0+i;
+			shape->vertex[i]->coord[0]=xc;
 			shape->vertex[i]->coord[1]=yc;
 
-			mvprintw(yc,xc,"0");
+			// Line drawing decision 
 			if (dec>0) {
 				dec+=2*(dx-dy);
 				xc+=xp;
 			} else dec+=2*dx;
+		} if (!rev) {
+			// if the line is reversed, reverse it back
+			struct vector *tmp_vector;
+			int l=0, r=shape->pointc-1;
+			while (l<r) {
+				tmp_vector=shape->vertex[l];
+				shape->vertex[l]=shape->vertex[r];
+				shape->vertex[r]=tmp_vector;
+				l++;r--;
+			}
 		} return 1;
 	}
 }
