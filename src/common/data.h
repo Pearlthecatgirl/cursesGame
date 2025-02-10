@@ -24,4 +24,5 @@ struct base {
 // Use this function in the game. Loads the binary data
 // TODO: add obfuscation
 void util_loadData(char *path, char *dataId, struct data *contentBlob);
+void _loadData_txt(char *path, char *dataId, struct data *contentBlob);
 

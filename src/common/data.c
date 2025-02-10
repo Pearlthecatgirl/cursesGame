@@ -20,7 +20,12 @@ util_loadData(char *path, char *dataId, struct data *contentBlob) {
 	if (!strncpy(contentBlob->dataId, dataId, sizeof(char)*MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
 	if (strcmp(contentBlob->dataId, strtok(header, "|"))!=0) fprintf(stderr, "Warning: map id doesn't seem correct...\n");
 	if (!strncpy(tmp_nameBuffer, strtok(NULL, "|"), MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
-	
-
 }
+
+void 
+_loadData_txt(char *path, char *dataId, struct data *contentBlob) {
+	FILE *fptr;
+	char fullpath[256];
+}
+
 
