@@ -15,7 +15,7 @@ int main_loop(struct arg *args);
 
 int 
 init(void) {
-	initscr();raw();clear();refresh();
+	//initscr();cbreak();clear();refresh();
 	mvprintw(0,0,"Welcome to the cursesGame engine tool shell. Enter 'help' to get started");
 	return 1;
 }
@@ -24,7 +24,16 @@ int
 main_loop(struct arg *args) {
 	char buf[32];
 	char command[16];
+	fgets(buf, 16, stdin);
 	if (!strncpy(command, strtok(buf, " "), sizeof(char)*16)) CRASH(ENOBUFS);
+	fprintf(stdout, "input: %s\n", command);
+
+	if (!strcmp(command, "exit\n")) {
+		args->isRunning=0;	
+	} else if (!strcmp(command, "exit")) {
+		args->isRunning=0;	
+	} else if (!strcmp(command, "help")) {
+	}	
 }
 
 // TODO: add args support in the future, as well as the path
@@ -35,7 +44,7 @@ main(void) {
 	while (args->isRunning) {
 		main_loop(args);	
 	}
-	endwin();
+	//endwin();
 	return 0;
 }
 
