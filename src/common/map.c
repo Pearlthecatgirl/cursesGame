@@ -1,4 +1,4 @@
-#include "./map.h"
+#include "map.h"
 
 void 
 util_loadMap(char *path, char *mapId, struct map *currentMap) {

@@ -8,8 +8,9 @@
 #include <time.h>
 #include <unistd.h> // This may not be as portable
 
-#include "../common/map.h"
+#include "../common/data.h"
 #include "../common/definitions.h"
+#include "../common/map.h"
 
 // #! Global
 const float g_tickPeriod=1000.0/TARGET_TICK_RATE;
@@ -74,16 +75,6 @@ struct player {
 	char *last_open_mapId;
 } player;
 
-struct data {
-	char *tileset;
-} data;
-
-struct base {
-	struct data *dat;
-	char *data_path;
-	int data_path_len;
-} base;
-
 struct arg {
 	struct base *self;
 	struct player* p;
@@ -139,11 +130,12 @@ void world_loopEnv(struct arg *args); // Checks environment objects/mobs only
 enum State world_loopMain(struct arg *args); //player only
 
 short
-entity_spawn(struct entity *opt, struct arg *args, int use_rand) {
+entity_spawn(struct entity *opt, struct data *dat, int use_rand) {
 	if (!use_rand) {
 		USE_RAND:
-	} else {
 
+	} else {
+	
 	}
 }
 
