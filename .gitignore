@@ -53,3 +53,8 @@ dkms.conf
 
 # Testing files
 ./test
+
+# Build files/artifacts
+./build
+./build*
+./logs
