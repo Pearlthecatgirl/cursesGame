@@ -19,9 +19,9 @@
     #define M_PI 3.14159265358979323846
 #endif
 
+// Might be deprecated maybe remove?
 #define NS_WAIT 1000000000
 #define US_WAIT 1000000
 #define MS_WAIT 1000
 #define S_WAIT 1
-
 

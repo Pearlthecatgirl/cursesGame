@@ -6,7 +6,7 @@ util_loadMap(char *path, char *mapId, struct map *currentMap) {
 	char fullpath[256];
 
 	// /path/to/data/dir/LEVEL/LEVEL1...LEVEL2... 
-	if (snprintf(fullpath, 256, "%s/LEVEL/%s", path, mapId)<0) CRASH(ENOBUFS);
+	if (snprintf(fullpath, 256, "%s%s%s", path, "/LEVEL/", mapId)<0) CRASH(ENOBUFS);
 	if (access(fullpath, R_OK)!=0) CRASH(EACCES);
 	if (!(fptr=fopen(fullpath, "rb"))) CRASH(ENOMEM);
 	

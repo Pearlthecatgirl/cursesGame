@@ -13,6 +13,8 @@ struct map {
 	int size;
 };
 
+// Use this function in the game. Loads the binary data
+// TODO: add obfuscation
 void util_loadMap(char *path, char *mapId, struct map *currentMap);
 
 

@@ -58,7 +58,7 @@ struct entity {
 		passive_static, passive_nonStatic, 
 		aggresive_static, aggresive_nonStatic,
 	} entity_type; // Enemies, decor, etc
-} entity;
+};
 
 struct player {
 	struct entity *self;
@@ -73,7 +73,7 @@ struct player {
 	// Spawn/respawning
 	int resx, resy;
 	char *last_open_mapId;
-} player;
+};
 
 struct arg {
 	struct base *self;
@@ -102,7 +102,7 @@ struct arg {
 #ifdef NCURSES_MOUSE_VERSION
 	struct shape_vertex *mouse_pathfind;
 #endif
-} args;
+};
 
 // #!Functions
 //short entity_spawn(struct entity *opt, struct base *self, int use_rand); // returns ret code
@@ -284,13 +284,13 @@ main_init(void) {
 	initscr();noecho();raw();clear();curs_set(0);keypad(stdscr, TRUE);
 	struct arg *opt=malloc(sizeof(struct arg));
 	if (!opt) CRASH(ENOMEM);
-	opt->p=malloc(sizeof(player));
+	opt->p=malloc(sizeof(struct player));
 	if (!opt->p) CRASH(ENOMEM);
-	opt->p->self=malloc(sizeof(entity));
+	opt->p->self=malloc(sizeof(struct entity));
 	if (!opt->p->self) CRASH(ENOMEM);
-	opt->self=malloc(sizeof(base));
+	opt->self=malloc(sizeof(struct base));
 	if (!opt->self) CRASH(ENOMEM);
-	opt->self->dat=malloc(sizeof(data));
+	opt->self->dat=malloc(sizeof(struct data));
 	if (!opt->self->dat) CRASH(ENOMEM);
 	// set 5 tilesets for now... move into dat file later
 	opt->self->dat->tileset=malloc(sizeof(char)*6);
@@ -585,6 +585,7 @@ main(int argc, char **argv) {
 	struct arg *args=malloc(sizeof(struct arg));
 	args=main_init();
 
+	// replace ./data with the root filepath from a cfg or something
 	util_loadMap("./data", "MAP000.TST", args->currentMap);
 
 	refresh();
