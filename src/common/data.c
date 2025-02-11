@@ -54,8 +54,7 @@ _loadData_txt(char *path, char *dataId, struct data *contentBlob) {
 
 	// Loop through as many data points as given in the header
 	for (int i=0;i<section_count-1;i++) {
-		char identifier[MAX_IDENTIFIER_SIZE];
-		fread(identifier, sizeof(char)*MAX_IDENTIFIER_SIZE, fptr);
+		
 	}
 }
 
