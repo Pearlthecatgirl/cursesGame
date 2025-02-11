@@ -20,12 +20,43 @@ util_loadData(char *path, char *dataId, struct data *contentBlob) {
 	if (!strncpy(contentBlob->dataId, dataId, sizeof(char)*MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
 	if (strcmp(contentBlob->dataId, strtok(header, "|"))!=0) fprintf(stderr, "Warning: map id doesn't seem correct...\n");
 	if (!strncpy(tmp_nameBuffer, strtok(NULL, "|"), MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
+
+	// TODO: Load stuff here
 }
 
 void 
 _loadData_txt(char *path, char *dataId, struct data *contentBlob) {
 	FILE *fptr;
 	char fullpath[256];
+	int section_count=0;
+
+	if (snprintf(fullpath, 256, "%s%s%s", path, "/DATA/", dataId)<0) CRASH(ENOBUFS);
+	if (access(fullpath, R_OK)!=0) CRASH(EACCES);
+	if (!(fptr=fopen(fullpath, "rb"))) CRASH(ENOMEM);
+
+	char *header=malloc(sizeof(char)*(HEADER_SIZE+1));
+	if (!header) CRASH(ENOMEM);
+	if (!fread(header, sizeof(char)*(HEADER_SIZE), 1, fptr)) CRASH(0);
+	
+	// TODO: make the obfuscation function
+	//strncpy(header, raw, sizeof(char)*(HEADER_SIZE+1));
+
+	char tmp_nameBuffer[MAX_NAME_SIZE];
+	if (!strncpy(contentBlob->dataId, dataId, sizeof(char)*MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
+	if (strcmp(contentBlob->dataId, strtok(header, "|"))!=0) fprintf(stderr, "Warning: map id doesn't seem correct...\n");
+	if (!strncpy(tmp_nameBuffer, strtok(NULL, "|"), MAX_FILE_NAME_SIZE)) CRASH(ENOBUFS);
+	// Count how many unique sections
+	if (!(section_count=atoi(strtok(NULL, "|")))) CRASH(ENOBUFS);
+
+	// The header should include the length of the first element
+	int data_len=0;
+	if (!(data_len=atoi(strtok(NULL, "|")))) CRASH(ENOBUFS);
+
+	// Loop through as many data points as given in the header
+	for (int i=0;i<section_count-1;i++) {
+		char identifier[MAX_IDENTIFIER_SIZE];
+		fread(identifier, sizeof(char)*MAX_IDENTIFIER_SIZE, fptr);
+	}
 }
 
 

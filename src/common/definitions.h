@@ -12,6 +12,8 @@
 #define TARGET_TICK_RATE 240 
 #define TARGET_FRAME_RATE 240
 #define TARGET_INPUT_RATE 240
+
+#define MAX_IDENTIFIER_SIZE // Size of the identifier in the data file per each element. E.g 
 #define HEADER_SIZE 50 //Size of header in each read file
 #define MAX_NAME_SIZE 32// Never use this size. It is just a temporary buffer
 
