@@ -19,7 +19,6 @@ const float g_framePeriod=1000.0/TARGET_FRAME_RATE;
 const float g_inputPeriod=1000.0/TARGET_INPUT_RATE;
 
 // #! Structs
-
 struct attr{
 	char *name;
 	int namec; // length of name
