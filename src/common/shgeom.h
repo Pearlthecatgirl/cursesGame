@@ -1,12 +1,25 @@
 #pragma once
+#define USE_SHIT_GEOMETRY
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+// Use curses.h, or provide a better terminal access layer
+#include <curses.h>
+#include <string.h>
 
-#ifndef CRASH(errnum)
+// Lets not get ahead of ourselves here.....
+#ifndef USE_SHIT_MATH
+	#include <math.h>
+#else
+	#include "shmath.h"
+#endif
+
+#ifndef CRASH
 	#define CRASH(errnum) {fprintf(stderr, "FATAL ERROR (line %d). Code: %s\n", __LINE__, strerror(errnum));endwin();printf("\033[?1003l\n");exit(errnum);}
 #endif
 
-#ifndef WARN(msg)
+#ifndef WARN
 	#define WARN(msg) {fprintf(stderr, "Warning: %s Might crash soon... (line: %d)\n", msg, __LINE__);}
 #endif
 
@@ -17,7 +30,7 @@ struct vector {
 
 struct shape_vertex {
 	struct vector **vertex; // each coordinate of each point
-	int space; // What dimension?
+	int space; // What dimension? This to stop people from trying to merge/normalise/compare
 	int pointc; // number of points
 };
 
