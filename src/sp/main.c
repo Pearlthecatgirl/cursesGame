@@ -19,38 +19,6 @@ const float g_framePeriod=1000.0/TARGET_FRAME_RATE;
 const float g_inputPeriod=1000.0/TARGET_INPUT_RATE;
 
 // #! Structs
-struct attr{
-	char *name;
-	int namec; // length of name
-	char *code; // identifier
-	int _value_index; // Value given in scientific notation
-	double _value_specific; // Value given in scientific notation
-	enum type {INT, FLOAT} type_of_value;
-};
-
-struct item{
-	struct attr **attrs_array; // Array of attributes
-	int attrc; // Number of Attributes
-};
-
-struct entity {
-	int ex, ey; // X and Y position
-	int r, t; // Range and Angle (theta) for direction facing and reach
-	short level;
-	long int health;
-	struct item **entity_inv; // Inventory of entities. Drops table
-	int inv_itemc; // Inventory item count
-	char *name;
-
-	/*static will always spawn. nonStatic is generated completely*/
-	// entities are spawned as void *. typecast to these structs
-	enum entity_type {
-		furniture_static, furniture_nonStatic,
-		passive_static, passive_nonStatic, 
-		aggresive_static, aggresive_nonStatic,
-	} entity_type; // Enemies, decor, etc
-};
-
 struct player {
 	struct entity *self;
 	char saveId[MAX_FILE_NAME_SIZE];

@@ -64,6 +64,7 @@ _loadData_txt(char *path, char *dataId, struct data *contentBlob) {
 			contentBlob->tilesetc=len;
 		} else if (!strcmp(header, "entity")) {
 			// This will be effected by more entity attributes	
+
 		} else if (!strcmp(header, "item")) {
 
 		}
