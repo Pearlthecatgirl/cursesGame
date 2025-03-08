@@ -29,15 +29,17 @@ int
 main_loop(struct arg *args) {
 	char buf[32];
 	char *command;
+	if (buf[strlen(buf)-1]=='\n') buf[strlen(buf)-1]='\0';
 	fgets(buf, 32, stdin);
 	command=strtok(buf, " ");
+	if (command[strlen(command)-1]=='\n') command[strlen(command)-1]='\0';
 	fprintf(stdout, "input: %s\n", command);
 
-	if (!strcmp(command, "exit\n")) {
+	if (!strcmp(command, "exit")) {
 		args->isRunning=0;	
-	} else if (!strcmp(command, "exit\n")) {
+	} else if (!strcmp(command, "exit")) {
 		args->isRunning=0;	
-	} else if (!strcmp(command, "help\n")) {
+	} else if (!strcmp(command, "help")) {
 		fprintf(stdout, "load: Usage: load (arg1: text || bin) (arg2: data || map || save) {arg_id: id} {arg_path: path/to/file_root}\n");
 	} else if (!strcmp(command, "load")) {
 		// Usage: load (arg1: text || bin) (arg2: data || map || save) {arg_id: id} {arg_path: path/to/file_root}

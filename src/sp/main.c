@@ -39,10 +39,10 @@ struct arg {
 	struct player* p;
 	struct map *currentMap;
 	WINDOW *window_array[5];
-	// TODO: make a new entity class?
+
 	struct entity **entity_array;
 	int entityc;
-	int entityc_a;
+	int entityc_a; // number of entities that are alive
 
 	short isRunning;
 	short iSMenu;
@@ -63,7 +63,7 @@ struct arg {
 #endif
 };
 
-// #!Functions
+// #! Functions
 //short entity_spawn(struct entity *opt, struct base *self, int use_rand); // returns ret code
 
 void generic_delay(const unsigned long int ms, const unsigned long int unit);
@@ -136,6 +136,13 @@ main_init(void) {
 	opt->currentMap=malloc(sizeof(struct map));
 	if (!opt->currentMap) CRASH(ENOMEM);
 	opt->isRunning=1;	
+	
+	// Temporary entity testing (remove later)
+	opt->self->dat->prototype_entityc=1;
+	opt->self->dat->prototype_entity_list=malloc(sizeof(struct entity *)*opt->self->dat->prototype_entityc);
+	opt->self->dat->ed_vector="SRUWX";
+	opt->self->dat->prototype_entity_list[0]=malloc(sizeof(struct entity *));
+	opt->self->dat->prototype_entity_list[0]->base_hp=10;
 
 	opt->window_array[0]=newwin(mLINES, mCOLS, 0, 0); // Root Window (always on)
 	opt->window_array[1]=subwin(opt->window_array[0], 0, 0, 0, 0); // main UI (always on)
@@ -146,6 +153,7 @@ main_init(void) {
 	opt->entityc=5;
 	opt->entityc_a=0;
 	opt->entity_array=malloc(sizeof (struct entity*)*opt->entityc);
+	//opt->entity
 
 	opt->tick=0;
 	opt->frame=0;
@@ -336,16 +344,23 @@ world_display(struct arg *args) {
 			if (iwx==args->p->self->ex) midX=isx;
 		}
 	}
+	// Create a short line to draw from the cursor
 	struct shape_vertex *cursorLine=malloc(sizeof(struct shape_vertex));
 	if (!generic_line_draw(args->mX, args->mY, midX, midY, cursorLine)) {
 #ifdef DEBUG
 		WARN("Some issue occured and shape was not drawn. ");
 #endif
 	}
-	generic_line_scale(cursorLine, 5); // Scaling test
+	generic_line_scale(cursorLine, 5); // Scales the line DOWN to 5
+
 	util_displayShape(args->window_array[2], cursorLine,'0');
 	generic_freeShape(cursorLine);
 	mvwaddch(args->window_array[2], midY, midX, '@');
+
+	// Display all Alive Entities
+	for (int i=0;i<args->entityc_a;i++) {
+		if (args->entity_array[i]!=NULL) mvprintw(args->entity_array[i]->ey, args->entity_array[i]->ey, "%c", args->self->dat->ed_vector[args->entity_array[i]->ed_id]);
+	}
 
 	wrefresh(args->window_array[2]);
 	wrefresh(args->window_array[1]);

@@ -5,6 +5,12 @@
 
 #include "../common/definitions.h"
 
+enum struct_entity_attrs {
+	spawn_x, spawn_y, 
+	base_level, base_range,
+	ed_id, level, 
+};
+
 struct attr{
 	char *name;
 	int namec; // length of name
@@ -26,9 +32,12 @@ struct data {
 	// Actual data
 	char *tileset;
 	int tilesetc; // tileset count
-	struct entity *prototype_entity_list;
+	char *ed_vector; // entity tile set
+	int edc; // entity display count
+	struct entity **prototype_entity_list;
 	int prototype_entityc;
 };
+
 /* Entity attributes:
  *	base_hp: base hp of entity, prior to level scaling, attribute modifiers, etc. This is stored in the data file
  *	total_hp: is derived from the base_hp, as well as scaling and modifiers.
@@ -41,6 +50,7 @@ struct data {
 struct entity {
 	int ex, ey; // X and Y position
 	int base_r, r, t; // Range and Angle (theta) for direction facing and reach
+	unsigned short ed_id; // Entity Display id: use for entity tileset
 	short level;
 	long int hp, base_hp, total_hp;
 	struct item **entity_inv; // Inventory of entities.
