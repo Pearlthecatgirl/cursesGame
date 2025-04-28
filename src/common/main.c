@@ -34,35 +34,6 @@ struct player {
 	char *last_open_mapId;
 };
 
-struct arg {
-	struct base *self;
-	struct player* p;
-	struct map *currentMap;
-	WINDOW *window_array[5];
-
-	struct entity **entity_array;
-	int entityc;
-	int entityc_a; // number of entities that are alive
-
-	short isRunning;
-	short iSMenu;
-	short autopause; // Pause during menu option
-	unsigned long long tick, frame, input;
-	int cKey; // Keyboard input
-	int mX, mY; // Cursor coordinates
-
-	enum State {world, menu, inventory} gameState;
-	
-	int cornerCoords[2 * 2 * 2];
-	int wOffset, hOffset;
-	int use_mouse;
-	char seed[16];
-	
-#ifdef NCURSES_MOUSE_VERSION
-	struct shape_vertex *mouse_pathfind;
-#endif
-};
-
 // #! Functions
 //short entity_spawn(struct entity *opt, struct base *self, int use_rand); // returns ret code
 
@@ -200,6 +171,9 @@ main_loopCalculation(void *args) {
 		cArgs->tick++;
 		if (!cArgs->autopause) {
 			// Handle world events here if autopause is on, handle it in the world (paused while menu or inventory)
+			for (int i=0;i<cArgs->entityc;i++) {
+			
+			}
 		}
 		switch (cArgs->gameState) {
 			case world:	

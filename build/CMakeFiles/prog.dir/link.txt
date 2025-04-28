@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/prog.dir/link.d CMakeFiles/prog.dir/src/common/data.c.o CMakeFiles/prog.dir/src/common/main.c.o CMakeFiles/prog.dir/src/common/map.c.o CMakeFiles/prog.dir/src/common/shgeom.c.o -o prog  -lcurses -lpthread -lm

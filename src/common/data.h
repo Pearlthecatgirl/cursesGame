@@ -11,6 +11,35 @@ enum struct_entity_attrs {
 	ed_id, level, 
 };
 
+struct arg {
+	struct base *self;
+	struct player* p;
+	struct map *currentMap;
+	WINDOW *window_array[5];
+
+	struct entity **entity_array;
+	int entityc;
+	int entityc_a; // number of entities that are alive
+
+	short isRunning;
+	short iSMenu;
+	short autopause; // Pause during menu option
+	unsigned long long tick, frame, input;
+	int cKey; // Keyboard input
+	int mX, mY; // Cursor coordinates
+
+	enum State {world, menu, inventory} gameState;
+	
+	int cornerCoords[2 * 2 * 2];
+	int wOffset, hOffset;
+	int use_mouse;
+	char seed[16];
+	
+#ifdef NCURSES_MOUSE_VERSION
+	struct shape_vertex *mouse_pathfind;
+#endif
+};
+
 struct attr{
 	char *name;
 	int namec; // length of name
@@ -59,6 +88,7 @@ struct entity {
 	char *name;
 	char **tagv; // Tag vector
 	int tagc; // Tag count
+	short isdead; // general checking for if an enemy is dead
 
 	/*static will always spawn. nonStatic is generated completely*/
 	// entities are spawned as void *. typecast to these structs
@@ -85,6 +115,7 @@ struct loot_table{
 
 // Use this function in the game. Loads the binary data
 // TODO: add obfuscation
+void util_loadArea(char *area_id, struct arg* args);
 void util_loadData(char *path, char *dataId, struct data *contentBlob);
 void _loadData_txt(char *path, char *dataId, struct data *contentBlob);
 

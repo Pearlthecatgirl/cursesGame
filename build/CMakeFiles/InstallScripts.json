@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/pearl/Projs/c/cursesGame/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

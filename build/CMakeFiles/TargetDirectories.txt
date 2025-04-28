@@ -1,0 +1,4 @@
+/home/pearl/Projs/c/cursesGame/build/CMakeFiles/prog.dir
+/home/pearl/Projs/c/cursesGame/build/CMakeFiles/data_editor.dir
+/home/pearl/Projs/c/cursesGame/build/CMakeFiles/edit_cache.dir
+/home/pearl/Projs/c/cursesGame/build/CMakeFiles/rebuild_cache.dir
